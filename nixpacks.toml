@@ -1,10 +1,7 @@
-[phases.setup]
-nixPkgs = ["nodejs_22"]
-
 [phases.install]
 cmds = [
-  "npm install --prefix server",
-  "npm install --prefix client"
+  "npm ci --prefix server",
+  "npm ci --prefix client"
 ]
 
 [phases.build]
