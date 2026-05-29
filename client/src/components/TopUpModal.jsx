@@ -4,9 +4,8 @@ import { api } from '../api/http.js';
 
 // 1 star = 1.19 RUB
 const STAR_TO_RUB = 1.19;
-// TON wallet addresses
-const TON_ADDR  = 'UQA9zSSArryJML1DX7gXLnWPZv9CD6mu2FYIiwPmMkqvg-ak';
-const SEND_ADDR = 'UQBOGTwqctfHIF1oecbsNU0NFcVvyr2QKpahU7JJkfchZB0C';
+// TON wallet address (for direct TON payments via @wallet)
+const TON_ADDR = 'UQA9zSSArryJML1DX7gXLnWPZv9CD6mu2FYIiwPmMkqvg-ak';
 
 const AMOUNTS = [
   { stars: 100,   bonus: 0    },
@@ -49,22 +48,28 @@ const TG_GIFTS = [
 export function TopUpModal({ onClose, telegramApi }) {
   const [promo, setPromo] = useState('');
   const [method, setMethod] = useState('stars');
-  const [tonRate, setTonRate] = useState(null);
+  const [tonRate, setTonRate] = useState(null);      // TON per star
+  const [rubPerUsdt, setRubPerUsdt] = useState(90);  // RUB per 1 USDT
   const [loading, setLoading] = useState(false);
   const [giftsOpen, setGiftsOpen] = useState(false);
 
-  // Загружаем курс TON при открытии
   useEffect(() => {
     api.get('/payments/ton-rate')
-      .then((r) => setTonRate(r.ton_per_star))
-      .catch(() => setTonRate(0.0025));
+      .then((r) => {
+        setTonRate(r.ton_per_star);
+        if (r.rub_per_usdt) setRubPerUsdt(r.rub_per_usdt);
+      })
+      .catch(() => {
+        setTonRate(0.0025);
+        setRubPerUsdt(90);
+      });
   }, []);
 
   async function handleAmount(stars) {
     if (method === 'stars') await payWithStars(stars);
     else if (method === 'sbp') paySBP(stars);
     else if (method === 'ton') payTON(stars);
-    else if (method === 'send') paySend(stars);
+    else if (method === 'send') await paySend(stars);
     else if (method === 'gifts') setGiftsOpen(true);
   }
 
@@ -89,20 +94,19 @@ export function TopUpModal({ onClose, telegramApi }) {
     }
   }
 
-  // СБП — открываем ссылку (заглушка, так как требует банковский эквайринг)
+  // СБП — заглушка, требует банковский эквайринг
   function paySBP(stars) {
     const rubles = (stars * STAR_TO_RUB).toFixed(2);
     alert(`Перевод ${rubles} ₽ через СБП.\n\nДля подключения реального СБП-эквайринга добавьте платёжный провайдер (Tinkoff, Sberbank и т.д.).`);
   }
 
-  // TON — открываем @wallet внутри Telegram
+  // TON — открываем @wallet с TON Connect (deeplink без underscore в комментарии)
   function payTON(stars) {
     if (!tonRate) return;
-    const ton = stars * tonRate;
-    const nanoTon = Math.round(ton * 1e9);
-    const comment = `darilo_${stars}stars`;
-    // t.me/wallet поддерживает transfer deeplink и открывается прямо в Telegram
-    const link = `https://t.me/wallet?startapp=ton-transfer_${TON_ADDR}_${nanoTon}_${encodeURIComponent(comment)}`;
+    const nanoTon = Math.round(stars * tonRate * 1e9);
+    // Комментарий без underscore — иначе ломается парсинг ton-transfer_addr_amount_comment
+    const comment = `darilo${stars}stars`;
+    const link = `https://t.me/wallet?startapp=ton-transfer_${TON_ADDR}_${nanoTon}_${comment}`;
     if (telegramApi?.openTelegramLink) {
       telegramApi.openTelegramLink(link);
     } else if (telegramApi?.openLink) {
@@ -112,18 +116,24 @@ export function TopUpModal({ onClose, telegramApi }) {
     }
   }
 
-  // @Send — открываем @send внутри Telegram (тот же формат что @wallet)
-  function paySend(stars) {
-    if (!tonRate) return;
-    const nanoTon = Math.round(stars * tonRate * 1e9);
-    const comment = `darilo_${stars}stars`;
-    const link = `https://t.me/send?startapp=ton-transfer_${SEND_ADDR}_${nanoTon}_${encodeURIComponent(comment)}`;
-    if (telegramApi?.openTelegramLink) {
-      telegramApi.openTelegramLink(link);
-    } else if (telegramApi?.openLink) {
-      telegramApi.openLink(link);
-    } else {
-      window.open(link, '_blank');
+  // @Send — создаём USDT инвойс через Crypto Bot API, открываем мини-апп оплаты
+  async function paySend(stars) {
+    setLoading(true);
+    try {
+      const { url } = await api.post('/payments/cryptopay/invoice', { stars });
+      if (telegramApi?.openTelegramLink) {
+        telegramApi.openTelegramLink(url);
+      } else if (telegramApi?.openLink) {
+        telegramApi.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    } catch (e) {
+      alert(e.message === 'cryptopay_not_configured'
+        ? 'Crypto Bot оплата не настроена. Добавьте CRYPTO_PAY_TOKEN в .env'
+        : e.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -132,6 +142,13 @@ export function TopUpModal({ onClose, telegramApi }) {
     if (!tonRate) return '…';
     const val = stars * tonRate;
     return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
+  }
+
+  // Форматирование USDT (для @send)
+  function fmtUsdt(stars) {
+    const rubles = stars * STAR_TO_RUB;
+    const usdt = rubles / rubPerUsdt;
+    return usdt < 0.01 ? usdt.toFixed(4) : usdt.toFixed(2);
   }
 
   // Форматирование рублей
@@ -239,8 +256,11 @@ export function TopUpModal({ onClose, telegramApi }) {
                   {method === 'sbp' && (
                     <span className="topup-amount-sub">{fmtRub(a.stars)} ₽</span>
                   )}
-                  {(method === 'ton' || method === 'send') && (
+                  {method === 'ton' && (
                     <span className="topup-amount-sub">{fmtTon(a.stars)} TON</span>
+                  )}
+                  {method === 'send' && (
+                    <span className="topup-amount-sub">{fmtRub(a.stars)} ₽ ≈ {fmtUsdt(a.stars)} USDT</span>
                   )}
                   <div className="topup-amount-plus">+</div>
                 </button>
