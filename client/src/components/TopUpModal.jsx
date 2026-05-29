@@ -102,30 +102,49 @@ export function TopUpModal({ onClose, telegramApi }) {
     alert(`Перевод ${rubles} ₽ через СБП.\n\nДля подключения реального СБП-эквайринга добавьте платёжный провайдер (Tinkoff, Sberbank и т.д.).`);
   }
 
-  // TON — открываем TON Connect модал (выбор кошелька: Tonkeeper, MyTonWallet, Tonhub...)
+  // TON — открываем TON Connect модал, после подключения кошелька автоматически шлём транзакцию
   async function payTON(stars) {
     if (!tonRate) return;
-    setLoading(true);
-    try {
-      const nanoTon = Math.round(stars * tonRate * 1e9).toString();
-      await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 600, // 10 минут
-        messages: [
-          {
-            address: TON_ADDR,
-            amount: nanoTon,
-          },
-        ],
-      });
-      onClose();
-    } catch (e) {
-      // Пользователь закрыл или отклонил — не показываем ошибку
-      if (e?.message && !e.message.includes('reject') && !e.message.includes('cancel')) {
-        alert('Ошибка TON: ' + e.message);
+
+    const nanoTon = Math.round(stars * tonRate * 1e9).toString();
+    const tx = {
+      validUntil: Math.floor(Date.now() / 1000) + 600,
+      messages: [{ address: TON_ADDR, amount: nanoTon }],
+    };
+
+    const sendTx = async () => {
+      setLoading(true);
+      try {
+        await tonConnectUI.sendTransaction(tx);
+        onClose();
+      } catch (e) {
+        // Пользователь отклонил — не показываем ошибку
+        if (e?.message && !e.message.includes('reject') && !e.message.includes('cancel')) {
+          alert('Ошибка TON: ' + e.message);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
+    };
+
+    // Кошелёк уже подключён — сразу отправляем транзакцию
+    if (tonConnectUI.connected) {
+      await sendTx();
+      return;
     }
+
+    // Открываем "Connect your TON wallet" и после подключения шлём транзакцию
+    tonConnectUI.openModal();
+    let unsub;
+    const timer = setTimeout(() => unsub?.(), 120000); // очистка через 2 мин
+    unsub = tonConnectUI.onStatusChange((wallet) => {
+      if (wallet) {
+        clearTimeout(timer);
+        unsub?.();
+        unsub = null;
+        sendTx();
+      }
+    });
   }
 
   // @Send — создаём USDT инвойс через Crypto Bot API, открываем мини-апп оплаты
