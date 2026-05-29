@@ -102,7 +102,7 @@ export function TopUpModal({ onClose, telegramApi }) {
     const nanoTon = Math.round(ton * 1e9);
     const comment = `darilo_${stars}stars`;
     // t.me/wallet поддерживает transfer deeplink и открывается прямо в Telegram
-    const link = `https://t.me/wallet?startattach=ton-transfer&to=${TON_ADDR}&amount=${nanoTon}&text=${encodeURIComponent(comment)}`;
+    const link = `https://t.me/wallet?startapp=ton-transfer_${TON_ADDR}_${nanoTon}_${encodeURIComponent(comment)}`;
     if (telegramApi?.openTelegramLink) {
       telegramApi.openTelegramLink(link);
     } else if (telegramApi?.openLink) {
@@ -112,13 +112,12 @@ export function TopUpModal({ onClose, telegramApi }) {
     }
   }
 
-  // @Send — открываем @send внутри Telegram
+  // @Send — открываем @send внутри Telegram (тот же формат что @wallet)
   function paySend(stars) {
     if (!tonRate) return;
-    const ton = stars * tonRate;
+    const nanoTon = Math.round(stars * tonRate * 1e9);
     const comment = `darilo_${stars}stars`;
-    // t.me/send deeplink для перевода TON через @Send кошелёк
-    const link = `https://t.me/send?startattach=ton-transfer&to=${SEND_ADDR}&amount=${ton.toFixed(9)}&text=${encodeURIComponent(comment)}`;
+    const link = `https://t.me/send?startapp=ton-transfer_${SEND_ADDR}_${nanoTon}_${encodeURIComponent(comment)}`;
     if (telegramApi?.openTelegramLink) {
       telegramApi.openTelegramLink(link);
     } else if (telegramApi?.openLink) {
