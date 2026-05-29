@@ -1,11 +1,13 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STARTING_BALANCE, STARTING_GEMS, STARTING_DEMO_BALANCE } from '../game/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = join(__dirname, '..', '..', 'data', 'crash.db');
+const dataDir = join(__dirname, '..', '..', 'data');
+const dbPath = join(dataDir, 'crash.db');
+mkdirSync(dataDir, { recursive: true });
 const schemaPath = join(__dirname, 'schema.sql');
 
 export const db = new DatabaseSync(dbPath);
