@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 210" width="140" height="210">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"  stop-color="#0d3b80"/>
+      <stop offset="22%" stop-color="#2a78d6"/>
+      <stop offset="50%" stop-color="#7ec6ff"/>
+      <stop offset="78%" stop-color="#2a78d6"/>
+      <stop offset="100%" stop-color="#0d3b80"/>
+    </linearGradient>
+
+    <linearGradient id="noseGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"  stop-color="#7a8a93"/>
+      <stop offset="40%" stop-color="#f3f6f8"/>
+      <stop offset="60%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#5b6a72"/>
+    </linearGradient>
+
+    <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"  stop-color="#5b6a72"/>
+      <stop offset="50%" stop-color="#eceff1"/>
+      <stop offset="100%" stop-color="#3c474e"/>
+    </linearGradient>
+
+    <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#ff6363"/>
+      <stop offset="55%" stop-color="#d11919"/>
+      <stop offset="100%" stop-color="#7a0a0a"/>
+    </linearGradient>
+
+    <radialGradient id="glassGrad" cx="0.35" cy="0.32" r="0.85">
+      <stop offset="0%"  stop-color="#9fc5ff"/>
+      <stop offset="35%" stop-color="#1e2a48"/>
+      <stop offset="100%" stop-color="#05080f"/>
+    </radialGradient>
+
+    <radialGradient id="flameOuter" cx="0.5" cy="0.1" r="0.9">
+      <stop offset="0%"   stop-color="#ffd966" stop-opacity="0.95"/>
+      <stop offset="55%"  stop-color="#ff7a1a" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#b71c1c" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="flameMid" cx="0.5" cy="0.1" r="0.9">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="35%"  stop-color="#ffe082"/>
+      <stop offset="75%"  stop-color="#ff8a3d" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ff5722" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="flameCore" cx="0.5" cy="0.1" r="0.7">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="60%"  stop-color="#fff59d"/>
+      <stop offset="100%" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%"  stop-color="#ffb74d" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffb74d" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.6"/>
+      <feOffset dx="0" dy="1.5" result="off"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    .flame-outer { transform-origin: 70px 165px; animation: flameOuter 0.18s ease-in-out infinite alternate; }
+    .flame-mid   { transform-origin: 70px 165px; animation: flameMid   0.13s ease-in-out infinite alternate; }
+    .flame-core  { transform-origin: 70px 165px; animation: flameCore  0.09s ease-in-out infinite alternate; }
+    .glow        { transform-origin: 70px 185px; animation: glowPulse  0.55s ease-in-out infinite alternate; }
+    .body-group  { transform-origin: 70px 110px; animation: shake 0.08s ease-in-out infinite alternate; }
+    .glass-shine { animation: shine 3.2s ease-in-out infinite; transform-origin: 70px 102px; }
+
+    @keyframes flameOuter {
+      0%   { transform: scaleY(0.92) scaleX(1.02); opacity: 0.88; }
+      100% { transform: scaleY(1.08) scaleX(0.96); opacity: 1; }
+    }
+    @keyframes flameMid {
+      0%   { transform: scaleY(0.85) scaleX(1.05); opacity: 0.85; }
+      100% { transform: scaleY(1.15) scaleX(0.92); opacity: 1; }
+    }
+    @keyframes flameCore {
+      0%   { transform: scaleY(0.7) scaleX(1.1); opacity: 0.7; }
+      100% { transform: scaleY(1.25) scaleX(0.88); opacity: 1; }
+    }
+    @keyframes glowPulse {
+      0%   { opacity: 0.55; transform: scale(0.9); }
+      100% { opacity: 0.95; transform: scale(1.1); }
+    }
+    @keyframes shake {
+      0%   { transform: translate(-0.4px, 0); }
+      100% { transform: translate(0.4px, -0.3px); }
+    }
+    @keyframes shine {
+      0%, 100% { opacity: 0.55; }
+      50%      { opacity: 0.95; }
+    }
+  </style>
+
+  <ellipse class="glow" cx="70" cy="185" rx="55" ry="22" fill="url(#glow)"/>
+
+  <g>
+    <ellipse class="flame-outer" cx="70" cy="170" rx="26" ry="44" fill="url(#flameOuter)"/>
+    <ellipse class="flame-mid"   cx="70" cy="168" rx="17" ry="34" fill="url(#flameMid)"/>
+    <ellipse class="flame-core"  cx="70" cy="166" rx="9"  ry="22" fill="url(#flameCore)"/>
+  </g>
+
+  <g class="body-group" filter="url(#softShadow)">
+
+    <path d="M44 120 L18 162 L44 154 Z"
+          fill="url(#finGrad)" stroke="#4a0606" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M44 122 L26 154 L41 150 Z" fill="#ff8b8b" opacity="0.35"/>
+
+    <path d="M96 120 L122 162 L96 154 Z"
+          fill="url(#finGrad)" stroke="#4a0606" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M96 122 L114 154 L99 150 Z" fill="#5a0a0a" opacity="0.45"/>
+
+    <path d="M62 152 L70 168 L78 152 Z" fill="#6e1010" opacity="0.6"/>
+
+    <path d="M52 148 Q70 162 88 148 L84 158 Q70 166 56 158 Z"
+          fill="url(#ringGrad)" stroke="#2c363c" stroke-width="1"/>
+
+    <path d="M44 74
+             L44 148
+             Q70 158 96 148
+             L96 74
+             Q70 66 44 74 Z"
+          fill="url(#bodyGrad)" stroke="#0a2244" stroke-width="1.3"/>
+
+    <path d="M50 76 Q47 110 50 146" stroke="#cfe9ff" stroke-width="2.2" fill="none" opacity="0.55" stroke-linecap="round"/>
+    <path d="M92 76 Q95 110 92 146" stroke="#06224d" stroke-width="2.5" fill="none" opacity="0.55" stroke-linecap="round"/>
+
+    <path d="M44 74 Q70 66 96 74 L96 80 Q70 72 44 80 Z"
+          fill="url(#ringGrad)" stroke="#2c363c" stroke-width="1"/>
+    <path d="M44 142 Q70 152 96 142 L96 150 Q70 160 44 150 Z"
+          fill="url(#ringGrad)" stroke="#2c363c" stroke-width="1"/>
+
+    <path d="M44 74 Q70 68 96 74 L70 22 Z"
+          fill="url(#noseGrad)" stroke="#3c474e" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M62 30 Q56 50 54 72" stroke="#ffffff" stroke-width="2.2" fill="none" opacity="0.7" stroke-linecap="round"/>
+    <path d="M78 32 Q86 52 88 72" stroke="#3c474e" stroke-width="1.6" fill="none" opacity="0.45" stroke-linecap="round"/>
+
+    <circle cx="70" cy="106" r="18" fill="#d11919" stroke="#5b0a0a" stroke-width="1.4"/>
+    <circle cx="70" cy="106" r="14.5" fill="#1a1f2c" stroke="#000" stroke-width="0.8"/>
+    <circle cx="70" cy="106" r="13" fill="url(#glassGrad)"/>
+    <ellipse class="glass-shine" cx="64" cy="99" rx="5" ry="3.4" fill="#ffffff" opacity="0.85"/>
+    <circle cx="76" cy="112" r="1.6" fill="#ffffff" opacity="0.7"/>
+    <circle cx="70" cy="90"  r="1.1" fill="#3a0606"/>
+    <circle cx="70" cy="122" r="1.1" fill="#3a0606"/>
+    <circle cx="54" cy="106" r="1.1" fill="#3a0606"/>
+    <circle cx="86" cy="106" r="1.1" fill="#3a0606"/>
+    <circle cx="58.5" cy="94.5"  r="1" fill="#3a0606"/>
+    <circle cx="81.5" cy="94.5"  r="1" fill="#3a0606"/>
+    <circle cx="58.5" cy="117.5" r="1" fill="#3a0606"/>
+    <circle cx="81.5" cy="117.5" r="1" fill="#3a0606"/>
+
+  </g>
+</svg>
