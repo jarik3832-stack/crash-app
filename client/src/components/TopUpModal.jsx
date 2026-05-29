@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 import { StarIcon } from './icons.jsx';
 import { api } from '../api/http.js';
 
 // 1 star = 1.19 RUB
 const STAR_TO_RUB = 1.19;
-// TON wallet address (for direct TON payments via @wallet)
+// TON wallet address — receives all TON payments via TON Connect
 const TON_ADDR = 'UQA9zSSArryJML1DX7gXLnWPZv9CD6mu2FYIiwPmMkqvg-ak';
 
 const AMOUNTS = [
@@ -46,6 +47,7 @@ const TG_GIFTS = [
 ];
 
 export function TopUpModal({ onClose, telegramApi }) {
+  const [tonConnectUI] = useTonConnectUI();
   const [promo, setPromo] = useState('');
   const [method, setMethod] = useState('stars');
   const [tonRate, setTonRate] = useState(null);      // TON per star
@@ -100,19 +102,29 @@ export function TopUpModal({ onClose, telegramApi }) {
     alert(`Перевод ${rubles} ₽ через СБП.\n\nДля подключения реального СБП-эквайринга добавьте платёжный провайдер (Tinkoff, Sberbank и т.д.).`);
   }
 
-  // TON — открываем @wallet с TON Connect (deeplink без underscore в комментарии)
-  function payTON(stars) {
+  // TON — открываем TON Connect модал (выбор кошелька: Tonkeeper, MyTonWallet, Tonhub...)
+  async function payTON(stars) {
     if (!tonRate) return;
-    const nanoTon = Math.round(stars * tonRate * 1e9);
-    // Комментарий без underscore — иначе ломается парсинг ton-transfer_addr_amount_comment
-    const comment = `darilo${stars}stars`;
-    const link = `https://t.me/wallet?startapp=ton-transfer_${TON_ADDR}_${nanoTon}_${comment}`;
-    if (telegramApi?.openTelegramLink) {
-      telegramApi.openTelegramLink(link);
-    } else if (telegramApi?.openLink) {
-      telegramApi.openLink(link);
-    } else {
-      window.open(link, '_blank');
+    setLoading(true);
+    try {
+      const nanoTon = Math.round(stars * tonRate * 1e9).toString();
+      await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 600, // 10 минут
+        messages: [
+          {
+            address: TON_ADDR,
+            amount: nanoTon,
+          },
+        ],
+      });
+      onClose();
+    } catch (e) {
+      // Пользователь закрыл или отклонил — не показываем ошибку
+      if (e?.message && !e.message.includes('reject') && !e.message.includes('cancel')) {
+        alert('Ошибка TON: ' + e.message);
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
