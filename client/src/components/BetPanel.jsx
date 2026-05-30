@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSocket } from '../api/socket.js';
 import { t } from '../i18n/ru.js';
-import { PlusIcon, MinusIcon, StarIcon, GemIcon } from './icons.jsx';
+import { PlusIcon, MinusIcon, StarIcon } from './icons.jsx';
 
 const MIN_BET = 10;
 const MAX_BET = 100000;
@@ -187,7 +187,7 @@ export function BetPanel({ user, game, settings, onBalanceChange }) {
 
       <div className="bet-row">
         <div className="stepper">
-          <span className="lead-icon"><GemIcon size={14} /><StarIcon size={14} /></span>
+          <span className="lead-icon"><StarIcon size={14} /></span>
           <button className="stepper-btn" onClick={() => adjustAmount(-stepFor(amount))} disabled={!!myBet}>
             <MinusIcon size={12} />
           </button>

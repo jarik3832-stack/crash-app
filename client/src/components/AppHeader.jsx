@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/http.js';
 import { t } from '../i18n/ru.js';
 import {
-  CloseIcon, StarIcon, GemIcon, ChevronDownIcon, MoreIcon, TrophyIcon,
+  CloseIcon, StarIcon, ChevronDownIcon, MoreIcon, TrophyIcon,
 } from './icons.jsx';
 import { LeaderboardModal } from './LeaderboardModal.jsx';
 import { TopUpModal } from './TopUpModal.jsx';
@@ -18,7 +18,7 @@ export function AppHeader({ user, title, showToggles, settings, onSettings, tele
       .then((r) => { if (!cancel) setRank(r.me?.rank ?? null); })
       .catch(() => {});
     return () => { cancel = true; };
-  }, [user?.balance, user?.gems]);
+  }, [user?.balance]);
 
   function closeApp() {
     if (telegramApi?.close) telegramApi.close();
@@ -32,10 +32,6 @@ export function AppHeader({ user, title, showToggles, settings, onSettings, tele
           <CloseIcon size={12} /> {t.app.close}
         </button>
         <div className="header-center">
-          <span className="balance-chip" title={t.profile.gems}>
-            <GemIcon size={16} />
-            {(user?.gems ?? 0).toLocaleString('ru-RU')}
-          </span>
         </div>
         {showTopUp && (
           <button className="balance-topup-chip" onClick={() => setTopUpOpen(true)}>

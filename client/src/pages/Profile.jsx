@@ -6,14 +6,14 @@ import { ProfileHeader } from '../components/ProfileHeader.jsx';
 import { Stats } from '../components/Stats.jsx';
 import { DailyBonus } from '../components/DailyBonus.jsx';
 import { BetHistory } from '../components/BetHistory.jsx';
-import { StarIcon, GemIcon } from '../components/icons.jsx';
+import { StarIcon } from '../components/icons.jsx';
 
 export function Profile({ user, onBalanceChange, telegramApi }) {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
     api.history().then((r) => setHistory(r.history)).catch(() => {});
-  }, [user.balance, user.gems]);
+  }, [user.balance]);
 
   return (
     <>
@@ -28,13 +28,6 @@ export function Profile({ user, onBalanceChange, telegramApi }) {
               <div>
                 <div className="label">{t.profile.coins}</div>
                 <div className="value">{user.balance.toLocaleString('ru-RU')}</div>
-              </div>
-            </div>
-            <div className="profile-balance-tile gems">
-              <GemIcon size={28} />
-              <div>
-                <div className="label">{t.profile.gems}</div>
-                <div className="value">{user.gems.toLocaleString('ru-RU')}</div>
               </div>
             </div>
           </div>

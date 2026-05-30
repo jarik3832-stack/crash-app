@@ -267,9 +267,8 @@ button { cursor: pointer; }
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 240px;
+  min-height: 140px;
   overflow: hidden;
-  flex-shrink: 0;
 }
 .rocket-canvas {
   position: absolute;
