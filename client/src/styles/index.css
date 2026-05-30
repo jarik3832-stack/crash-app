@@ -2119,3 +2119,239 @@ button { cursor: pointer; }
   font-size: 16px;
   font-weight: 800;
 }
+
+/* ============ Horizontal scrolling for cases ============ */
+.cases-scroll-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.cases-scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+.cases-scroll-container::-webkit-scrollbar-track {
+  background: var(--surface-2);
+  border-radius: 2px;
+}
+.cases-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+.cases-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+.cases-scroll-container .case-card-new {
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+/* ============ Case detail hero ============ */
+.case-hero-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  margin-bottom: 16px;
+}
+
+.case-hero-image {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(203,255,88,0.3));
+}
+
+.case-hero-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  margin: 0;
+}
+
+.case-badge-limited-large {
+  background: #00d9a3;
+  color: #000;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============ Horizontal scrolling items ============ */
+.case-items-scroll-horizontal {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 16px 0;
+  margin: 0 -12px;
+  padding-left: 12px;
+  padding-right: 12px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.case-items-scroll-horizontal::-webkit-scrollbar {
+  height: 4px;
+}
+.case-items-scroll-horizontal::-webkit-scrollbar-track {
+  background: var(--surface-2);
+  border-radius: 2px;
+}
+.case-items-scroll-horizontal::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.case-item-card-horizontal {
+  position: relative;
+  min-width: 140px;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-badge-corner {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transform: rotate(12deg);
+  z-index: 1;
+}
+.item-badge-corner.item-badge-limited {
+  background: #ffd700;
+  color: #000;
+}
+.item-badge-corner.item-badge-epic {
+  background: #a855f7;
+  color: #fff;
+}
+.item-badge-corner.item-badge-rare {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.case-item-image-wrap-horizontal {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(255,255,255,0.05));
+  overflow: hidden;
+}
+
+.case-item-price-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* ============ Shortage text ============ */
+.shortage-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  padding: 8px;
+}
+
+/* ============ Top-up button ============ */
+.btn-topup {
+  background: linear-gradient(135deg, #5865f2, #7289da);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-topup:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4752c4, #5b6eae);
+}
+
+.topup-icon {
+  font-size: 20px;
+}
+
+/* ============ Section title ============ */
+.case-detail-section-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 24px 0 16px;
+  text-align: center;
+}
+
+/* ============ Bottom grid ============ */
+.case-items-grid-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.case-item-card-small {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.case-item-image-wrap-small {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0,0,0,0.2), rgba(255,255,255,0.05));
+}
+
+.case-item-price-small {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ============ Reel hero image ============ */
+.case-hero-image-reel {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(203,255,88,0.3));
+}

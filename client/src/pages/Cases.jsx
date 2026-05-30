@@ -80,7 +80,6 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
       {stage === 'list' && (
         <div className="cases-page-new">
           <div className="cases-filters">
-            <button className="filter-search">🔍</button>
             {PRICE_FILTERS.map((f) => (
               <button
                 key={f.label}
@@ -101,15 +100,13 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
                   <div className="cases-section-divider">
                     <span>{RARITY_LABELS[rarity]}</span>
                   </div>
-                  <div className="cases-grid">
+                  <div className="cases-scroll-container">
                     {group.map((c) => (
                       <div key={c.slug} className="case-card-new" onClick={() => openDetail(c)}>
                         {c.rarity === 'limited' && <div className="case-badge-limited">LIMITED</div>}
                         <div className="case-image-wrap">
-                          {c.image_url ? (
+                          {c.image_url && (
                             <img src={c.image_url} alt={c.name_ru} className="case-image" />
-                          ) : (
-                            <div className="case-emoji-fallback">{c.image_emoji}</div>
                           )}
                         </div>
                         <div className="case-name-new">{c.name_ru}</div>
@@ -117,9 +114,6 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
                           <StarIcon size={16} />
                           {c.price_coins}
                         </div>
-                        {c.stock && (
-                          <div className="case-stock">Осталось {c.stock}/777</div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -144,7 +138,9 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
       {stage === 'reel' && selected && result && (
         <div className="case-detail">
           <div className="case-hero">
-            <div className="case-emoji-big">{selected.image_emoji}</div>
+            {selected.image_url && (
+              <img src={selected.image_url} alt={selected.name_ru} className="case-hero-image-reel" />
+            )}
             <div className="case-name">{selected.name_ru}</div>
           </div>
           <CaseReel
@@ -158,7 +154,6 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
       {stage === 'result' && result && (
         <div className="case-detail">
           <div className="case-hero">
-            <div className="case-emoji-big">⭐</div>
             <div className="res-title">{t.cases.won}</div>
             <div className="res-amount">
               <StarIcon size={32} />
@@ -187,49 +182,86 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
 }
 
 function CaseDetailNew({ c, user, opening, error, onOpen, onBack }) {
+  const canAfford = user.balance >= c.price_coins;
+  const shortage = canAfford ? 0 : c.price_coins - user.balance;
+
   return (
     <div className="case-detail-new">
       <div className="case-detail-header-new">
         <button className="case-back-btn" onClick={onBack}>← Назад</button>
-        <div className="topup-btn-inline" onClick={() => {}}>
-          💳 Пополнить баланс
-        </div>
       </div>
 
-      <h2 className="case-detail-title-new">Содержимое</h2>
+      <div className="case-hero-detail">
+        {c.image_url && (
+          <img src={c.image_url} alt={c.name_ru} className="case-hero-image" />
+        )}
+        <h1 className="case-hero-title">{c.name_ru}</h1>
+        {c.rarity === 'limited' && <div className="case-badge-limited-large">LIMITED</div>}
+      </div>
 
-      <div className="case-items-grid">
+      <div className="case-items-scroll-horizontal">
         {c.items.map((it) => (
-          <div key={it.id} className="case-item-card">
+          <div key={it.id} className="case-item-card-horizontal">
             {it.rarity && it.rarity !== 'common' && (
-              <div className={`item-badge-${it.rarity}`}>
-                {it.rarity === 'limited' ? 'Limited' : it.rarity === 'epic' ? 'Epic' : 'Special'}
+              <div className={`item-badge-corner item-badge-${it.rarity}`}>
+                {it.rarity === 'limited' ? 'Legend' : it.rarity === 'epic' ? 'Epic' : 'Special'}
               </div>
             )}
-            <div className="case-item-image-wrap">
-              {it.image_url ? (
+            <div className="case-item-image-wrap-horizontal">
+              {it.image_url && (
                 <img src={it.image_url} alt={it.label_ru} className="case-item-image" />
-              ) : (
-                <div className="case-item-emoji">⭐</div>
               )}
             </div>
-            <div className="case-item-price">
-              <StarIcon size={14} />
-              {it.amount.toLocaleString('ru-RU')}
+            <div className="case-item-price-horizontal">
+              {it.amount.toLocaleString('ru-RU')} <StarIcon size={14} />
             </div>
           </div>
         ))}
       </div>
 
+      {!canAfford && (
+        <div className="shortage-text">
+          Не хватает {shortage} <StarIcon size={16} />
+        </div>
+      )}
+
       <div className="case-open-actions">
-        <button
-          className="btn btn-primary btn-large"
-          onClick={onOpen}
-          disabled={opening || user.balance < c.price_coins}
-        >
-          {opening ? 'Открываем...' : `Открыть за ${c.price_coins} ⭐`}
-        </button>
+        {!canAfford ? (
+          <button className="btn btn-topup btn-large" onClick={() => {}}>
+            <span className="topup-icon">💳</span> Пополнить баланс
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary btn-large"
+            onClick={onOpen}
+            disabled={opening}
+          >
+            {opening ? 'Открываем...' : `Открыть за ${c.price_coins} ⭐`}
+          </button>
+        )}
         {error && <div className="feedback feedback-error">{error}</div>}
+      </div>
+
+      <h2 className="case-detail-section-title">Содержание</h2>
+
+      <div className="case-items-grid-bottom">
+        {c.items.map((it) => (
+          <div key={`bottom-${it.id}`} className="case-item-card-small">
+            {it.rarity && it.rarity !== 'common' && (
+              <div className={`item-badge-corner item-badge-${it.rarity}`}>
+                {it.rarity === 'limited' ? 'Legend' : it.rarity === 'epic' ? 'Epic' : 'Special'}
+              </div>
+            )}
+            <div className="case-item-image-wrap-small">
+              {it.image_url && (
+                <img src={it.image_url} alt={it.label_ru} className="case-item-image" />
+              )}
+            </div>
+            <div className="case-item-price-small">
+              {it.amount.toLocaleString('ru-RU')} <StarIcon size={12} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
