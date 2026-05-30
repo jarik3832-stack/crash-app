@@ -59,6 +59,8 @@ export function Admin({ user, telegramApi }) {
           name_ru: c.name_ru,
           price_coins: c.price_coins,
           image_emoji: c.image_emoji,
+          image_url: c.image_url,
+          rarity: c.rarity,
           enabled: c.enabled,
         });
         await api.put(`/admin/cases/${c.id}/items`, { items: c.items });
@@ -68,6 +70,8 @@ export function Admin({ user, telegramApi }) {
           name_ru: c.name_ru,
           price_coins: c.price_coins,
           image_emoji: c.image_emoji,
+          image_url: c.image_url,
+          rarity: c.rarity,
           items: c.items,
         });
       }
@@ -159,8 +163,10 @@ export function Admin({ user, telegramApi }) {
                 name_ru: '',
                 price_coins: 1000,
                 image_emoji: '🎁',
+                image_url: '',
+                rarity: 'common',
                 enabled: true,
-                items: [{ reward_kind: 'coins', amount: 500, weight: 50, label_ru: 'Приз' }],
+                items: [{ reward_kind: 'coins', amount: 500, weight: 50, label_ru: 'Приз', image_url: '', rarity: 'common' }],
               })}
             >
               + Создать кейс
@@ -258,6 +264,7 @@ function UserBalanceModal({ user, onSave, onClose }) {
 
 function CaseEditorModal({ caseData, onSave, onClose }) {
   const [c, setC] = useState({ ...caseData, items: [...(caseData.items || [])] });
+  const [uploading, setUploading] = useState(false);
 
   function updateField(field, value) {
     setC({ ...c, [field]: value });
@@ -272,12 +279,36 @@ function CaseEditorModal({ caseData, onSave, onClose }) {
   function addItem() {
     setC({
       ...c,
-      items: [...c.items, { reward_kind: 'coins', amount: 100, weight: 10, label_ru: 'Новый приз' }],
+      items: [...c.items, { reward_kind: 'coins', amount: 100, weight: 10, label_ru: 'Новый приз', image_url: '', rarity: 'common' }],
     });
   }
 
   function removeItem(idx) {
     setC({ ...c, items: c.items.filter((_, i) => i !== idx) });
+  }
+
+  async function uploadImage(file, target, idx = null) {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch('/api/upload/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('crash_token')}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      if (target === 'case') {
+        updateField('image_url', data.url);
+      } else if (target === 'item' && idx !== null) {
+        updateItem(idx, 'image_url', data.url);
+      }
+    } catch (e) {
+      alert('Ошибка загрузки: ' + e.message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -323,6 +354,31 @@ function CaseEditorModal({ caseData, onSave, onClose }) {
               onChange={(e) => updateField('image_emoji', e.target.value)}
               className="form-input"
             />
+          </div>
+          <div className="form-group">
+            <label>Изображение PNG</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files[0] && uploadImage(e.target.files[0], 'case')}
+              className="form-input"
+              disabled={uploading}
+            />
+            {c.image_url && <img src={c.image_url} alt="preview" style={{ maxWidth: 100, marginTop: 8 }} />}
+          </div>
+          <div className="form-group">
+            <label>Редкость</label>
+            <select
+              value={c.rarity || 'common'}
+              onChange={(e) => updateField('rarity', e.target.value)}
+              className="form-input"
+            >
+              <option value="free">Бесплатный</option>
+              <option value="common">Обычный</option>
+              <option value="rare">Редкий</option>
+              <option value="epic">Эпический</option>
+              <option value="limited">Лимитированный</option>
+            </select>
           </div>
           <div className="form-group">
             <label>
@@ -377,6 +433,30 @@ function CaseEditorModal({ caseData, onSave, onClose }) {
                   onChange={(e) => updateItem(idx, 'label_ru', e.target.value)}
                   className="form-input"
                 />
+              </div>
+              <div className="form-group">
+                <label>Изображение предмета</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files[0] && uploadImage(e.target.files[0], 'item', idx)}
+                  className="form-input"
+                  disabled={uploading}
+                />
+                {it.image_url && <img src={it.image_url} alt="preview" style={{ maxWidth: 60, marginTop: 4 }} />}
+              </div>
+              <div className="form-group">
+                <label>Редкость предмета</label>
+                <select
+                  value={it.rarity || 'common'}
+                  onChange={(e) => updateItem(idx, 'rarity', e.target.value)}
+                  className="form-input"
+                >
+                  <option value="common">Обычный</option>
+                  <option value="rare">Редкий</option>
+                  <option value="epic">Эпический</option>
+                  <option value="limited">Лимитированный</option>
+                </select>
               </div>
               <button className="btn btn-danger btn-sm" onClick={() => removeItem(idx)}>
                 Удалить предмет

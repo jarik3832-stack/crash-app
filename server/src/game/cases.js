@@ -3,11 +3,11 @@ import { db, tx, getUser } from '../db/index.js';
 
 export function listCases() {
   const cases = db.prepare(
-    'SELECT id, slug, name_ru, price_coins, image_emoji FROM cases WHERE enabled = 1 ORDER BY price_coins ASC'
+    'SELECT id, slug, name_ru, price_coins, image_emoji, image_url, rarity FROM cases WHERE enabled = 1 ORDER BY price_coins ASC'
   ).all().map((c) => ({ ...c }));
 
   const itemStmt = db.prepare(
-    `SELECT id, reward_kind, amount, weight, label_ru, sort_order
+    `SELECT id, reward_kind, amount, weight, label_ru, sort_order, image_url, rarity
      FROM case_items WHERE case_id = ? ORDER BY sort_order ASC`
   );
   for (const c of cases) {
@@ -24,7 +24,7 @@ export function openCase({ telegram_id, slug }) {
   if (!caseRow || !caseRow.enabled) throw new Error('case_not_found');
 
   const items = db.prepare(
-    `SELECT id, reward_kind, amount, weight, label_ru, sort_order
+    `SELECT id, reward_kind, amount, weight, label_ru, sort_order, image_url, rarity
      FROM case_items WHERE case_id = ? ORDER BY sort_order ASC`
   ).all(caseRow.id).map((it) => ({ ...it }));
   if (items.length === 0) throw new Error('case_empty');
@@ -67,6 +67,8 @@ export function openCase({ telegram_id, slug }) {
         amount: picked.amount,
         label_ru: picked.label_ru,
         sort_order: picked.sort_order,
+        image_url: picked.image_url,
+        rarity: picked.rarity,
       },
       balances: {
         balance: user.balance,

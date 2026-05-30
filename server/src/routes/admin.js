@@ -39,15 +39,15 @@ router.get('/cases', (req, res) => {
 });
 
 router.post('/cases', (req, res) => {
-  const { slug, name_ru, price_coins, image_emoji, items } = req.body;
-  const caseId = adminCreateCase({ slug, name_ru, price_coins, image_emoji, items });
+  const { slug, name_ru, price_coins, image_emoji, image_url, rarity, items } = req.body;
+  const caseId = adminCreateCase({ slug, name_ru, price_coins, image_emoji, image_url, rarity, items });
   res.json({ case_id: caseId });
 });
 
 router.patch('/cases/:id', (req, res) => {
   const caseId = Number(req.params.id);
-  const { slug, name_ru, price_coins, image_emoji, enabled } = req.body;
-  adminUpdateCase(caseId, { slug, name_ru, price_coins, image_emoji, enabled });
+  const { slug, name_ru, price_coins, image_emoji, image_url, rarity, enabled } = req.body;
+  adminUpdateCase(caseId, { slug, name_ru, price_coins, image_emoji, image_url, rarity, enabled });
   res.json({ ok: true });
 });
 

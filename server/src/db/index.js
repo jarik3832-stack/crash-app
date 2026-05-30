@@ -63,6 +63,26 @@ function runMigrations() {
     if (!betsCols.has(name)) db.exec(`ALTER TABLE bets ADD COLUMN ${name} ${def}`);
   }
 
+  // Cases: add rarity and image_url
+  const casesCols = new Set(db.prepare('PRAGMA table_info(cases)').all().map((c) => c.name));
+  const caseAdds = [
+    ['rarity', "TEXT NOT NULL DEFAULT 'common'"],
+    ['image_url', 'TEXT'],
+  ];
+  for (const [name, def] of caseAdds) {
+    if (!casesCols.has(name)) db.exec(`ALTER TABLE cases ADD COLUMN ${name} ${def}`);
+  }
+
+  // Case items: add image_url and rarity
+  const itemsCols = new Set(db.prepare('PRAGMA table_info(case_items)').all().map((c) => c.name));
+  const itemAdds = [
+    ['image_url', 'TEXT'],
+    ['rarity', "TEXT NOT NULL DEFAULT 'common'"],
+  ];
+  for (const [name, def] of itemAdds) {
+    if (!itemsCols.has(name)) db.exec(`ALTER TABLE case_items ADD COLUMN ${name} ${def}`);
+  }
+
   db.exec('CREATE INDEX IF NOT EXISTS idx_bets_leaderboard ON bets(payout DESC) WHERE demo = 0 AND payout > 0');
 }
 
@@ -427,30 +447,32 @@ export function adminListCases() {
   return cases;
 }
 
-export function adminCreateCase({ slug, name_ru, price_coins, image_emoji, items }) {
+export function adminCreateCase({ slug, name_ru, price_coins, image_emoji, image_url, rarity, items }) {
   return tx(() => {
     const caseId = Number(db.prepare(
-      'INSERT INTO cases (slug, name_ru, price_coins, image_emoji) VALUES (?, ?, ?, ?)'
-    ).run(slug, name_ru, price_coins, image_emoji).lastInsertRowid);
+      'INSERT INTO cases (slug, name_ru, price_coins, image_emoji, image_url, rarity) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(slug, name_ru, price_coins, image_emoji, image_url || null, rarity || 'common').lastInsertRowid);
 
     const insertItem = db.prepare(
-      'INSERT INTO case_items (case_id, reward_kind, amount, weight, label_ru, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO case_items (case_id, reward_kind, amount, weight, label_ru, sort_order, image_url, rarity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
     items.forEach((it, idx) => {
-      insertItem.run(caseId, it.reward_kind, it.amount, it.weight, it.label_ru, idx);
+      insertItem.run(caseId, it.reward_kind, it.amount, it.weight, it.label_ru, idx, it.image_url || null, it.rarity || 'common');
     });
 
     return caseId;
   });
 }
 
-export function adminUpdateCase(caseId, { slug, name_ru, price_coins, image_emoji, enabled }) {
+export function adminUpdateCase(caseId, { slug, name_ru, price_coins, image_emoji, image_url, rarity, enabled }) {
   const sets = [];
   const args = [];
   if (slug !== undefined) { sets.push('slug = ?'); args.push(slug); }
   if (name_ru !== undefined) { sets.push('name_ru = ?'); args.push(name_ru); }
   if (price_coins !== undefined) { sets.push('price_coins = ?'); args.push(price_coins); }
   if (image_emoji !== undefined) { sets.push('image_emoji = ?'); args.push(image_emoji); }
+  if (image_url !== undefined) { sets.push('image_url = ?'); args.push(image_url); }
+  if (rarity !== undefined) { sets.push('rarity = ?'); args.push(rarity); }
   if (enabled !== undefined) { sets.push('enabled = ?'); args.push(enabled ? 1 : 0); }
   if (sets.length === 0) return;
   args.push(caseId);
@@ -465,10 +487,10 @@ export function adminUpdateCaseItems(caseId, items) {
   return tx(() => {
     db.prepare('DELETE FROM case_items WHERE case_id = ?').run(caseId);
     const insertItem = db.prepare(
-      'INSERT INTO case_items (case_id, reward_kind, amount, weight, label_ru, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO case_items (case_id, reward_kind, amount, weight, label_ru, sort_order, image_url, rarity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
     items.forEach((it, idx) => {
-      insertItem.run(caseId, it.reward_kind, it.amount, it.weight, it.label_ru, idx);
+      insertItem.run(caseId, it.reward_kind, it.amount, it.weight, it.label_ru, idx, it.image_url || null, it.rarity || 'common');
     });
   });
 }

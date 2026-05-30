@@ -9,6 +9,7 @@ import { Server as IOServer } from 'socket.io';
 import { apiRouter } from './routes/api.js';
 import adminRouter from './routes/admin.js';
 import paymentsRouter from './routes/payments.js';
+import uploadRouter from './routes/upload.js';
 import { attachSockets } from './sockets/handlers.js';
 import { engine } from './game/engine.js';
 
@@ -34,6 +35,8 @@ app.use(express.json({ limit: '64kb' }));
 app.use('/api', apiRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/upload', uploadRouter);
+app.use('/uploads', express.static(join(__dirname, '../uploads')));
 app.get('/health', (_req, res) => res.json({ ok: true, phase: engine.phase }));
 
 // Статика фронтенда (только в prod — когда dist собран)
