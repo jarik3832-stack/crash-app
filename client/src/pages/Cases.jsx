@@ -3,7 +3,7 @@ import { api } from '../api/http.js';
 import { t } from '../i18n/ru.js';
 import { AppHeader } from '../components/AppHeader.jsx';
 import { CaseReel } from '../components/CaseReel.jsx';
-import { StarIcon, GemIcon } from '../components/icons.jsx';
+import { StarIcon } from '../components/icons.jsx';
 
 export function Cases({ user, onBalanceChange, telegramApi }) {
   const [cases, setCases] = useState([]);
@@ -101,13 +101,11 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
         <div className="case-detail">
           <div className="case-hero">
             <div className="case-emoji-big">
-              {result.item.reward_kind === 'coins' ? '⭐' : '💎'}
+              {result.item.reward_kind === 'coins' ? '⭐' : '⭐'}
             </div>
             <div className="res-title">{t.cases.won}</div>
             <div className="res-amount">
-              {result.item.reward_kind === 'coins'
-                ? <StarIcon size={32} />
-                : <GemIcon size={32} />}
+              <StarIcon size={32} />
               {result.item.amount.toLocaleString('ru-RU')}
             </div>
             <div className="res-label">{result.item.label_ru}</div>
@@ -173,7 +171,7 @@ function CaseDetail({ c, user, opening, error, onOpen, onBack }) {
                 className={`case-carousel-item ${idx === carouselIndex ? 'active' : ''}`}
               >
                 <div className="carousel-item-image">
-                  {it.reward_kind === 'coins' ? '⭐' : '💎'}
+                  {it.reward_kind === 'coins' ? '⭐' : '⭐'}
                 </div>
                 <div className="carousel-item-name">{it.label_ru}</div>
                 <div className="carousel-item-price">

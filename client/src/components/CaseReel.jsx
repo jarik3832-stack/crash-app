@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { GemIcon, StarIcon } from './icons.jsx';
+import { StarIcon } from './icons.jsx';
 
 const ROW_ITEMS = 50;
 const ITEM_WIDTH = 90;
@@ -40,7 +40,7 @@ export function CaseReel({ items, winningItemId, onSettled }) {
         {reel.map((it, idx) => (
           <div key={idx} className="case-reel-item">
             <div className="ri-icon">
-              {it.reward_kind === 'coins' ? <StarIcon size={28} /> : <GemIcon size={28} />}
+              <StarIcon size={28} />
             </div>
             <div className="ri-amt">{it.amount}</div>
           </div>

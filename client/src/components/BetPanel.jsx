@@ -204,22 +204,18 @@ export function BetPanel({ user, game, settings, onBalanceChange }) {
             <PlusIcon size={12} />
           </button>
         </div>
-        <div className="stepper">
-          <button className="stepper-btn" onClick={() => adjustAuto(-0.1)} disabled={!!myBet}>
-            <MinusIcon size={12} />
-          </button>
+        <div className="auto-cashout-wrap">
+          <span className="auto-cashout-label">Авто</span>
           <input
             type="text"
             inputMode="decimal"
             value={autoCashout}
-            placeholder={t.bet.autoPlaceholder}
+            placeholder="выкл"
             onChange={(e) => setAutoCashout(e.target.value.replace(',', '.'))}
             disabled={!!myBet || game.phase !== 'betting'}
-            className="stepper-input"
+            className="auto-cashout-input"
           />
-          <button className="stepper-btn" onClick={() => adjustAuto(0.1)} disabled={!!myBet}>
-            <PlusIcon size={12} />
-          </button>
+          <span className="auto-cashout-x">×</span>
         </div>
       </div>
 
