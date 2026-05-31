@@ -19,6 +19,7 @@ import {
   DEMO_REPLENISH_COOLDOWN_MS,
 } from '../game/config.js';
 import { listCases, openCase } from '../game/cases.js';
+import * as pvp from '../game/pvp.js';
 
 export const apiRouter = Router();
 
@@ -123,5 +124,52 @@ apiRouter.post('/cases/:slug/open', authMiddleware, (req, res) => {
   } catch (e) {
     const code = e.message === 'insufficient_balance' ? 400 : 404;
     res.status(code).json({ error: e.message });
+  }
+});
+
+// PvP routes
+apiRouter.get('/pvp/games', authMiddleware, (_req, res) => {
+  const games = pvp.listGames();
+  res.json({ games });
+});
+
+apiRouter.post('/pvp/games', authMiddleware, (req, res) => {
+  const user = getUser(req.userId);
+  const game = pvp.createGame(req.userId, user.username);
+  pvp.joinGame(game.id, req.userId, user.username);
+  res.json({ game });
+});
+
+apiRouter.post('/pvp/games/:gameId/join', authMiddleware, (req, res) => {
+  try {
+    const user = getUser(req.userId);
+    const game = pvp.joinGame(req.params.gameId, req.userId, user.username);
+    res.json({ game });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+apiRouter.post('/pvp/bet', authMiddleware, (req, res) => {
+  try {
+    const { gameId, amount, type } = req.body;
+    const user = getUser(req.userId);
+
+    if (type === 'stars' && user.balance < amount) {
+      return res.status(400).json({ error: 'insufficient_balance' });
+    }
+
+    // Списываем баланс
+    if (type === 'stars') {
+      const db = require('../db/index.js').db;
+      db.prepare('UPDATE users SET balance = balance - ? WHERE telegram_id = ?').run(amount, req.userId);
+    }
+
+    const game = pvp.placeBet(gameId, req.userId, amount, type);
+    const updatedUser = getUser(req.userId);
+
+    res.json({ game, user: updatedUser });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
   }
 });

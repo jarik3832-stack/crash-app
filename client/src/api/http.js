@@ -43,6 +43,12 @@ export const api = {
   cases: () => request('GET', '/api/cases'),
   openCase: (slug) => request('POST', `/api/cases/${slug}/open`),
 
+  // PvP API
+  pvpGames: () => request('GET', '/api/pvp/games'),
+  createPvpGame: () => request('POST', '/api/pvp/games'),
+  joinPvpGame: (gameId) => request('POST', `/api/pvp/games/${gameId}/join`),
+  placePvpBet: (payload) => request('POST', '/api/pvp/bet', payload),
+
   // Admin API
   get: (path) => request('GET', `/api${path}`),
   post: (path, body) => request('POST', `/api${path}`, body),

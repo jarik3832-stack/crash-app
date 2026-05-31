@@ -2351,3 +2351,417 @@ button { cursor: pointer; }
   object-fit: contain;
   filter: drop-shadow(0 4px 16px rgba(203,255,88,0.3));
 }
+
+/* ============ PvP Mode ============ */
+.pvp-lobby {
+  padding: 16px;
+  padding-bottom: calc(var(--nav-h) + 16px);
+}
+
+.pvp-header {
+  margin-bottom: 24px;
+}
+
+.pvp-games-list h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.pvp-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+}
+
+.pvp-game-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.pvp-game-card:active {
+  transform: scale(0.98);
+}
+
+.pvp-game-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pvp-game-id {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pvp-game-players,
+.pvp-game-pot {
+  font-size: 14px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pvp-game-status {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* PvP Game Screen */
+.pvp-game {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--nav-h) + 16px);
+  min-height: 100vh;
+}
+
+.pvp-game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pvp-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.pvp-balance-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.pvp-balance-chip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pvp-players-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+}
+
+.pvp-player-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.pvp-player-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pvp-player-bet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.pvp-player-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.pvp-player-chance {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.pvp-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px 16px;
+  gap: 12px;
+}
+
+.pvp-stat {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.pvp-stat-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.pvp-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pvp-stat-icon {
+  font-size: 16px;
+}
+
+.pvp-stat-percent {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.pvp-counters {
+  display: flex;
+  gap: 8px;
+}
+
+.pvp-counter {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pvp-counter-icon {
+  font-size: 14px;
+}
+
+/* PvP Wheel */
+.pvp-wheel-container {
+  padding: 20px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pvp-wheel {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  aspect-ratio: 1;
+}
+
+.pvp-wheel-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pvp-wheel-pointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.pvp-wheel-pointer-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+
+.pvp-player-badge {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  transform: translate(-50%, -50%);
+  border: 2px solid #000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* PvP Bet Buttons */
+.pvp-bet-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.pvp-bet-btn {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.pvp-bet-btn:active {
+  transform: scale(0.95);
+}
+
+.pvp-bet-icon {
+  font-size: 18px;
+}
+
+/* PvP Players List */
+.pvp-players-list {
+  padding: 0 16px;
+}
+
+.pvp-players-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.pvp-online-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pvp-online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.pvp-game-id {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.pvp-player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.pvp-player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.pvp-player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pvp-player-total {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* PvP Bet Modal */
+.pvp-bet-modal {
+  max-width: 400px;
+}
+
+.pvp-balance-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.pvp-gifts-select {
+  padding: 12px 0;
+}
+
+.pvp-gifts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pvp-gift-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pvp-gift-card:hover {
+  border-color: var(--accent);
+}
+
+.pvp-gift-emoji {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.pvp-gift-name {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pvp-gift-value {
+  font-size: 11px;
+  color: var(--text-dim);
+}
