@@ -20,6 +20,7 @@ import {
 } from '../game/config.js';
 import { listCases, openCase } from '../game/cases.js';
 import * as pvp from '../game/pvp.js';
+import { db } from '../db/index.js';
 
 export const apiRouter = Router();
 
@@ -128,48 +129,32 @@ apiRouter.post('/cases/:slug/open', authMiddleware, (req, res) => {
 });
 
 // PvP routes
-apiRouter.get('/pvp/games', authMiddleware, (_req, res) => {
-  const games = pvp.listGames();
-  res.json({ games });
-});
-
-apiRouter.post('/pvp/games', authMiddleware, (req, res) => {
-  const user = getUser(req.userId);
-  const game = pvp.createGame(req.userId, user.username);
-  pvp.joinGame(game.id, req.userId, user.username);
-  res.json({ game });
-});
-
-apiRouter.post('/pvp/games/:gameId/join', authMiddleware, (req, res) => {
-  try {
-    const user = getUser(req.userId);
-    const game = pvp.joinGame(req.params.gameId, req.userId, user.username);
-    res.json({ game });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+apiRouter.get('/pvp/current', authMiddleware, (_req, res) => {
+  res.json({ game: pvp.getCurrentGame() });
 });
 
 apiRouter.post('/pvp/bet', authMiddleware, (req, res) => {
   try {
-    const { gameId, amount, type } = req.body;
+    const { amount, type } = req.body;
     const user = getUser(req.userId);
 
-    if (type === 'stars' && user.balance < amount) {
-      return res.status(400).json({ error: 'insufficient_balance' });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'invalid_amount' });
     }
 
-    // Списываем баланс
-    if (type === 'stars') {
-      const db = require('../db/index.js').db;
+    if (type === 'stars' || !type) {
+      if (user.balance < amount) {
+        return res.status(400).json({ error: 'insufficient_balance' });
+      }
       db.prepare('UPDATE users SET balance = balance - ? WHERE telegram_id = ?').run(amount, req.userId);
     }
 
-    const game = pvp.placeBet(gameId, req.userId, amount, type);
+    const game = pvp.addBet(req.userId, user.username || user.first_name || `#${req.userId}`, amount);
     const updatedUser = getUser(req.userId);
 
     res.json({ game, user: updatedUser });
   } catch (e) {
-    res.status(400).json({ error: e.message });
+    const code = e.message === 'insufficient_balance' ? 400 : e.message === 'round_in_progress' ? 409 : 400;
+    res.status(code).json({ error: e.message });
   }
 });

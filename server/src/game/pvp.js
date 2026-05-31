@@ -1,154 +1,108 @@
-// PvP game engine
-const games = new Map();
-let gameIdCounter = 1;
+import { db } from '../db/index.js';
 
-const COLORS = ['#a855f7', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
+const COLORS = ['#a855f7', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#14b8a6', '#f97316'];
+const ROUND_DURATION_MS = 60 * 1000; // 60 секунд до спина
+const SPIN_DURATION_MS = 5000;       // 5 секунд анимация спина
 
-export function createGame(userId, username) {
-  const gameId = `rg-${gameIdCounter++}`;
+let currentGame = createNewGame();
+let gameTimer = null;
 
-  const game = {
-    id: gameId,
-    status: 'waiting', // waiting, playing, finished
+function createNewGame() {
+  const id = `rg-${Math.floor(10000 + Math.random() * 90000)}`;
+  return {
+    id,
+    status: 'betting',  // betting | spinning | finished
     players: [],
     totalPot: 0,
-    totalStars: 0,
-    jackpot: 0,
-    createdAt: Date.now(),
-    startedAt: null,
-    finishedAt: null,
+    jackpot: '0.00',
+    watching: 0,
+    startedAt: Date.now(),
+    winner: null,
   };
-
-  games.set(gameId, game);
-  return game;
 }
 
-export function joinGame(gameId, userId, username) {
-  const game = games.get(gameId);
-  if (!game) throw new Error('Game not found');
-  if (game.status !== 'waiting') throw new Error('Game already started');
+function recalcChances() {
+  const total = currentGame.players.reduce((s, p) => s + p.betAmount, 0);
+  currentGame.totalPot = total;
+  currentGame.jackpot = (total * 0.2 / 100).toFixed(2);
 
-  const existingPlayer = game.players.find(p => p.id === userId);
-  if (existingPlayer) return game;
-
-  const player = {
-    id: userId,
-    username,
-    betAmount: 0,
-    color: COLORS[game.players.length % COLORS.length],
-    chance: 0,
-  };
-
-  game.players.push(player);
-  recalculateChances(game);
-
-  return game;
+  currentGame.players.forEach(p => {
+    p.chance = total > 0 ? Math.round((p.betAmount / total) * 100) : 0;
+  });
 }
 
-export function placeBet(gameId, userId, amount, type = 'stars') {
-  const game = games.get(gameId);
-  if (!game) throw new Error('Game not found');
+function selectWinner() {
+  const total = currentGame.totalPot;
+  if (total === 0 || currentGame.players.length === 0) return null;
 
-  const player = game.players.find(p => p.id === userId);
-  if (!player) throw new Error('Player not in game');
+  const rand = Math.random() * total;
+  let cumulative = 0;
+  for (const p of currentGame.players) {
+    cumulative += p.betAmount;
+    if (rand <= cumulative) return p;
+  }
+  return currentGame.players[currentGame.players.length - 1];
+}
+
+function startSpinTimer() {
+  if (gameTimer) clearTimeout(gameTimer);
+
+  gameTimer = setTimeout(() => {
+    if (currentGame.players.length < 2 || currentGame.totalPot === 0) {
+      // Не хватает игроков — сбрасываем таймер
+      gameTimer = setTimeout(startSpinTimer, ROUND_DURATION_MS);
+      return;
+    }
+
+    currentGame.status = 'spinning';
+
+    setTimeout(() => {
+      const winner = selectWinner();
+      if (winner) {
+        currentGame.status = 'finished';
+        currentGame.winner = winner;
+
+        // Выдаем выигрыш победителю
+        db.prepare('UPDATE users SET balance = balance + ? WHERE telegram_id = ?')
+          .run(currentGame.totalPot, winner.userId);
+      }
+
+      // Через 5 секунд — новая игра
+      setTimeout(() => {
+        currentGame = createNewGame();
+        startSpinTimer();
+      }, 5000);
+    }, SPIN_DURATION_MS);
+  }, ROUND_DURATION_MS);
+}
+
+// Запускаем первый таймер
+startSpinTimer();
+
+export function getCurrentGame() {
+  return currentGame;
+}
+
+export function addBet(userId, username, amount) {
+  if (currentGame.status !== 'betting') {
+    throw new Error('round_in_progress');
+  }
+
+  let player = currentGame.players.find(p => p.userId === userId);
+  if (!player) {
+    const idx = currentGame.players.length;
+    player = {
+      userId,
+      username,
+      betAmount: 0,
+      color: COLORS[idx % COLORS.length],
+      chance: 0,
+    };
+    currentGame.players.push(player);
+  }
 
   player.betAmount += amount;
+  recalcChances();
 
-  if (type === 'stars') {
-    game.totalStars += amount;
-    game.totalPot += amount;
-  }
-
-  recalculateChances(game);
-
-  // Автостарт если 2+ игроков и есть ставки
-  if (game.players.length >= 2 && game.totalPot > 0 && game.status === 'waiting') {
-    setTimeout(() => startGame(gameId), 5000);
-  }
-
-  return game;
+  return currentGame;
 }
-
-function recalculateChances(game) {
-  const total = game.totalPot;
-
-  if (total === 0) {
-    // Равные шансы если нет ставок
-    const equalChance = 100 / game.players.length;
-    game.players.forEach(p => p.chance = Math.round(equalChance));
-  } else {
-    // Шансы пропорциональны ставкам
-    game.players.forEach(p => {
-      p.chance = Math.round((p.betAmount / total) * 100);
-    });
-  }
-
-  // Джекпот = 20% от банка
-  game.jackpot = (total * 0.2).toFixed(2);
-}
-
-function startGame(gameId) {
-  const game = games.get(gameId);
-  if (!game || game.status !== 'waiting') return;
-
-  game.status = 'playing';
-  game.startedAt = Date.now();
-
-  // Выбор победителя через 3 секунды
-  setTimeout(() => finishGame(gameId), 3000);
-}
-
-function finishGame(gameId) {
-  const game = games.get(gameId);
-  if (!game || game.status !== 'playing') return;
-
-  // Случайный выбор победителя с учетом шансов
-  const winner = selectWinner(game);
-
-  game.status = 'finished';
-  game.finishedAt = Date.now();
-  game.winner = winner;
-
-  // Удаляем игру через 30 секунд
-  setTimeout(() => games.delete(gameId), 30000);
-
-  return { game, winner };
-}
-
-function selectWinner(game) {
-  // Генерируем случайное число от 0 до 100
-  const random = Math.random() * 100;
-
-  let cumulative = 0;
-  for (const player of game.players) {
-    cumulative += player.chance;
-    if (random <= cumulative) {
-      return player;
-    }
-  }
-
-  // Fallback на последнего игрока
-  return game.players[game.players.length - 1];
-}
-
-export function getGame(gameId) {
-  return games.get(gameId);
-}
-
-export function listGames() {
-  return Array.from(games.values()).filter(g => g.status === 'waiting' || g.status === 'playing');
-}
-
-export function cleanupOldGames() {
-  const now = Date.now();
-  const maxAge = 30 * 60 * 1000; // 30 минут
-
-  for (const [gameId, game] of games.entries()) {
-    if (now - game.createdAt > maxAge) {
-      games.delete(gameId);
-    }
-  }
-}
-
-// Очистка старых игр каждые 5 минут
-setInterval(cleanupOldGames, 5 * 60 * 1000);
