@@ -77,3 +77,8 @@ CREATE TABLE IF NOT EXISTS admins (
   telegram_id INTEGER PRIMARY KEY REFERENCES users(telegram_id),
   granted_at  INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS game_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);

@@ -17,6 +17,7 @@ db.exec(readFileSync(schemaPath, 'utf8'));
 
 runMigrations();
 seedCases();
+initGameSettings();
 
 function plain(row) {
   if (!row) return row;
@@ -145,6 +146,40 @@ function seedCases() {
       });
     }
   });
+}
+
+function initGameSettings() {
+  const defaults = {
+    crash_min: '1.00',
+    crash_max: '100.00',
+    crash_house_edge: '0.04',
+    case_house_edge: '0.10',
+  };
+
+  for (const [key, value] of Object.entries(defaults)) {
+    const existing = db.prepare('SELECT value FROM game_settings WHERE key = ?').get(key);
+    if (!existing) {
+      db.prepare('INSERT INTO game_settings (key, value) VALUES (?, ?)').run(key, value);
+    }
+  }
+}
+
+export function getGameSetting(key) {
+  const row = db.prepare('SELECT value FROM game_settings WHERE key = ?').get(key);
+  return row ? row.value : null;
+}
+
+export function setGameSetting(key, value) {
+  db.prepare('INSERT OR REPLACE INTO game_settings (key, value) VALUES (?, ?)').run(key, value);
+}
+
+export function getAllGameSettings() {
+  const rows = db.prepare('SELECT key, value FROM game_settings').all();
+  const settings = {};
+  for (const row of rows) {
+    settings[row.key] = row.value;
+  }
+  return settings;
 }
 
 export { STARTING_BALANCE };

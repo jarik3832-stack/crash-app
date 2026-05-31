@@ -1,5 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api';
-import { db } from '../db/index.js';
+import { db, getAllGameSettings, setGameSetting } from '../db/index.js';
 import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -353,6 +353,7 @@ export function startBot(token) {
         const keyboard = {
           inline_keyboard: [
             [{ text: '🎲 Настроить шансы крэша', callback_data: 'settings_crash' }],
+            [{ text: '📦 Настроить шансы кейсов', callback_data: 'settings_cases' }],
             [{ text: '🔙 Назад', callback_data: 'admin_back' }],
           ],
         };
@@ -368,20 +369,82 @@ export function startBot(token) {
 
       // Настройки крэша
       else if (data === 'settings_crash') {
-        await bot.editMessageText(
-          '🎲 *Настройки шансов крэша*\n\n' +
-          'Текущие настройки находятся в файле:\n' +
-          '`src/game/crashPoint.js`\n\n' +
-          'Для изменения шансов отредактируйте функцию `generateCrashPoint()`',
-          {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'Markdown',
-            reply_markup: {
-              inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_settings' }]],
-            },
-          }
-        );
+        const settings = getAllGameSettings();
+
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '📉 Минимальный крэш', callback_data: 'set_crash_min' }],
+            [{ text: '📈 Максимальный крэш', callback_data: 'set_crash_max' }],
+            [{ text: '🏠 House Edge', callback_data: 'set_crash_edge' }],
+            [{ text: '🔙 Назад', callback_data: 'admin_settings' }],
+          ],
+        };
+
+        const text = '🎲 *Настройки шансов крэша*\n\n' +
+          `Минимальный крэш: ${settings.crash_min || '1.00'}x\n` +
+          `Максимальный крэш: ${settings.crash_max || '100.00'}x\n` +
+          `House Edge: ${(parseFloat(settings.crash_house_edge || 0.04) * 100).toFixed(1)}%\n\n` +
+          'Выберите параметр для изменения:';
+
+        await bot.editMessageText(text, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown',
+          reply_markup: keyboard,
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Настройки кейсов
+      else if (data === 'settings_cases') {
+        const settings = getAllGameSettings();
+
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '🏠 House Edge кейсов', callback_data: 'set_case_edge' }],
+            [{ text: '🔙 Назад', callback_data: 'admin_settings' }],
+          ],
+        };
+
+        const text = '📦 *Настройки шансов кейсов*\n\n' +
+          `House Edge: ${(parseFloat(settings.case_house_edge || 0.10) * 100).toFixed(1)}%\n\n` +
+          'House Edge определяет процент прибыли казино от кейсов.\n' +
+          'Например, 10% означает что в среднем игрок получит 90% от стоимости кейса.';
+
+        await bot.editMessageText(text, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown',
+          reply_markup: keyboard,
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Установка минимального крэша
+      else if (data === 'set_crash_min') {
+        userStates.set(userId, { action: 'setting_crash_min' });
+        await bot.sendMessage(chatId, '📉 Отправьте минимальное значение крэша (например: 1.00):');
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Установка максимального крэша
+      else if (data === 'set_crash_max') {
+        userStates.set(userId, { action: 'setting_crash_max' });
+        await bot.sendMessage(chatId, '📈 Отправьте максимальное значение крэша (например: 100.00):');
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Установка house edge крэша
+      else if (data === 'set_crash_edge') {
+        userStates.set(userId, { action: 'setting_crash_edge' });
+        await bot.sendMessage(chatId, '🏠 Отправьте House Edge в процентах (например: 4 для 4%):');
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Установка house edge кейсов
+      else if (data === 'set_case_edge') {
+        userStates.set(userId, { action: 'setting_case_edge' });
+        await bot.sendMessage(chatId, '🏠 Отправьте House Edge кейсов в процентах (например: 10 для 10%):');
         bot.answerCallbackQuery(query.id);
       }
 
@@ -472,6 +535,50 @@ export function startBot(token) {
         });
 
         bot.sendMessage(chatId, '✅ Данные приняты! Теперь отправьте изображение предмета.');
+      }
+
+      // Настройка минимального крэша
+      else if (state.action === 'setting_crash_min') {
+        const value = parseFloat(text);
+        if (isNaN(value) || value < 1.00) {
+          return bot.sendMessage(chatId, '❌ Неверное значение. Минимум должен быть >= 1.00');
+        }
+        setGameSetting('crash_min', value.toFixed(2));
+        userStates.delete(userId);
+        bot.sendMessage(chatId, `✅ Минимальный крэш установлен: ${value.toFixed(2)}x`);
+      }
+
+      // Настройка максимального крэша
+      else if (state.action === 'setting_crash_max') {
+        const value = parseFloat(text);
+        if (isNaN(value) || value < 1.00) {
+          return bot.sendMessage(chatId, '❌ Неверное значение. Максимум должен быть >= 1.00');
+        }
+        setGameSetting('crash_max', value.toFixed(2));
+        userStates.delete(userId);
+        bot.sendMessage(chatId, `✅ Максимальный крэш установлен: ${value.toFixed(2)}x`);
+      }
+
+      // Настройка house edge крэша
+      else if (state.action === 'setting_crash_edge') {
+        const value = parseFloat(text);
+        if (isNaN(value) || value < 0 || value > 100) {
+          return bot.sendMessage(chatId, '❌ Неверное значение. Введите число от 0 до 100');
+        }
+        setGameSetting('crash_house_edge', (value / 100).toFixed(4));
+        userStates.delete(userId);
+        bot.sendMessage(chatId, `✅ House Edge крэша установлен: ${value.toFixed(1)}%`);
+      }
+
+      // Настройка house edge кейсов
+      else if (state.action === 'setting_case_edge') {
+        const value = parseFloat(text);
+        if (isNaN(value) || value < 0 || value > 100) {
+          return bot.sendMessage(chatId, '❌ Неверное значение. Введите число от 0 до 100');
+        }
+        setGameSetting('case_house_edge', (value / 100).toFixed(4));
+        userStates.delete(userId);
+        bot.sendMessage(chatId, `✅ House Edge кейсов установлен: ${value.toFixed(1)}%`);
       }
     } catch (err) {
       console.error('[bot] Message error:', err);
