@@ -611,8 +611,8 @@ export function startBot(token) {
         const slug = state.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
         const result = db.prepare(`
-          INSERT INTO cases (slug, name_ru, price_coins, rarity, image_url, enabled)
-          VALUES (?, ?, ?, ?, ?, 1)
+          INSERT INTO cases (slug, name_ru, price_coins, rarity, image_url, image_emoji, enabled)
+          VALUES (?, ?, ?, ?, ?, '', 1)
         `).run(slug, state.name, state.price, state.rarity, imageUrl);
 
         userStates.delete(userId);
@@ -637,8 +637,8 @@ export function startBot(token) {
       // Завершение добавления предмета
       else if (state.action === 'adding_item_waiting_image') {
         db.prepare(`
-          INSERT INTO case_items (case_id, label_ru, amount, chance, rarity, image_url)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
+          VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
         `).run(state.caseId, state.name, state.amount, state.chance, state.rarity, imageUrl);
 
         userStates.delete(userId);
