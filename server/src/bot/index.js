@@ -1,22 +1,50 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { db } from '../db/index.js';
+import { writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import https from 'node:https';
+import http from 'node:http';
 
-// Замени на свой Telegram ID после того как узнаешь его командой /myid
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR = join(__dirname, '../../uploads');
+
 const ADMIN_TELEGRAM_ID = parseInt(process.env.ADMIN_TELEGRAM_ID || '0');
+
+// Временное хранилище для состояний пользователей
+const userStates = new Map();
 
 export function startBot(token) {
   const bot = new TelegramBot(token, { polling: true });
 
-  // Проверка админа
   function isAdmin(userId) {
     return userId === ADMIN_TELEGRAM_ID;
   }
 
-  // /myid - узнать свой Telegram ID
+  // Скачать файл по URL
+  async function downloadFile(url, filepath) {
+    return new Promise((resolve, reject) => {
+      const protocol = url.startsWith('https') ? https : http;
+      protocol.get(url, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to download: ${response.statusCode}`));
+          return;
+        }
+        const chunks = [];
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', () => {
+          writeFileSync(filepath, Buffer.concat(chunks));
+          resolve(filepath);
+        });
+      }).on('error', reject);
+    });
+  }
+
+  // /myid
   bot.onText(/\/myid/, (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-    bot.sendMessage(chatId, `Ваш Telegram ID: \`${userId}\`\n\nДобавьте его в .env файл:\nADMIN_TELEGRAM_ID=${userId}`, {
+    bot.sendMessage(chatId, `Ваш Telegram ID: \`${userId}\`\n\nДобавьте его в .env:\nADMIN_TELEGRAM_ID=${userId}`, {
       parse_mode: 'Markdown',
     });
   });
@@ -27,7 +55,7 @@ export function startBot(token) {
     bot.sendMessage(chatId, 'Привет! Открой игру через кнопку меню.');
   });
 
-  // /admin - главное меню админки
+  // /admin
   bot.onText(/\/admin$/, (msg) => {
     const chatId = msg.chat.id;
     if (!isAdmin(msg.from.id)) {
@@ -48,7 +76,7 @@ export function startBot(token) {
     });
   });
 
-  // Управление кейсами
+  // Обработка callback
   bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id;
     const messageId = query.message.message_id;
@@ -60,199 +88,465 @@ export function startBot(token) {
 
     const data = query.data;
 
-    // Главное меню кейсов
-    if (data === 'admin_cases') {
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '➕ Добавить кейс', callback_data: 'case_add' }],
-          [{ text: '📋 Список кейсов', callback_data: 'case_list' }],
-          [{ text: '🔙 Назад', callback_data: 'admin_back' }],
-        ],
-      };
+    try {
+      // Главное меню кейсов
+      if (data === 'admin_cases') {
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '➕ Добавить кейс', callback_data: 'case_add' }],
+            [{ text: '📋 Список кейсов', callback_data: 'case_list' }],
+            [{ text: '🔙 Назад', callback_data: 'admin_back' }],
+          ],
+        };
 
-      bot.editMessageText('📦 *Управление кейсами*\n\nВыберите действие:', {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: keyboard,
-      });
-      bot.answerCallbackQuery(query.id);
-    }
-
-    // Список кейсов
-    else if (data === 'case_list') {
-      const cases = db.prepare('SELECT * FROM cases ORDER BY price_coins').all();
-
-      if (cases.length === 0) {
-        bot.editMessageText('📋 *Список кейсов*\n\nКейсов пока нет.', {
+        await bot.editMessageText('📦 *Управление кейсами*\n\nВыберите действие:', {
           chat_id: chatId,
           message_id: messageId,
           parse_mode: 'Markdown',
+          reply_markup: keyboard,
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Добавить кейс
+      else if (data === 'case_add') {
+        await bot.editMessageText(
+          '➕ *Добавление кейса*\n\n' +
+          'Отправьте данные в формате:\n' +
+          '```\n' +
+          'Название: Лунный кейс\n' +
+          'Цена: 100\n' +
+          'Редкость: rare\n' +
+          '```\n\n' +
+          'Редкость: free, common, rare, epic, limited\n\n' +
+          'После этого отправьте изображение кейса.',
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_cases' }]],
+            },
+          }
+        );
+        userStates.set(userId, { action: 'creating_case' });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Список кейсов
+      else if (data === 'case_list') {
+        const cases = db.prepare('SELECT * FROM cases ORDER BY price_coins').all();
+
+        if (cases.length === 0) {
+          await bot.editMessageText('📋 *Список кейсов*\n\nКейсов пока нет.', {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_cases' }]],
+            },
+          });
+        } else {
+          const buttons = cases.map((c) => [
+            { text: `${c.name_ru} (${c.price_coins}⭐)`, callback_data: `case_edit_${c.id}` },
+          ]);
+          buttons.push([{ text: '🔙 Назад', callback_data: 'admin_cases' }]);
+
+          await bot.editMessageText('📋 *Список кейсов*\n\nВыберите кейс:', {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: { inline_keyboard: buttons },
+          });
+        }
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Редактирование кейса
+      else if (data.startsWith('case_edit_')) {
+        const caseId = parseInt(data.replace('case_edit_', ''));
+        const caseData = db.prepare('SELECT * FROM cases WHERE id = ?').get(caseId);
+
+        if (!caseData) {
+          return bot.answerCallbackQuery(query.id, { text: '❌ Кейс не найден' });
+        }
+
+        const items = db.prepare('SELECT * FROM case_items WHERE case_id = ?').all(caseId);
+        const itemsText = items.map((it) => `  • ${it.label_ru}: ${it.amount}⭐ (${it.chance}%)`).join('\n');
+
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '🖼️ Изменить изображение', callback_data: `case_image_${caseId}` }],
+            [{ text: '✏️ Изменить цену', callback_data: `case_price_${caseId}` }],
+            [{ text: '🎁 Добавить предмет', callback_data: `case_additem_${caseId}` }],
+            [{ text: '📋 Список предметов', callback_data: `case_items_${caseId}` }],
+            [{ text: '🗑️ Удалить кейс', callback_data: `case_delete_${caseId}` }],
+            [{ text: '🔙 Назад', callback_data: 'case_list' }],
+          ],
+        };
+
+        const text = `📦 *${caseData.name_ru}*\n\n` +
+          `Цена: ${caseData.price_coins}⭐\n` +
+          `Редкость: ${caseData.rarity}\n` +
+          `Включен: ${caseData.enabled ? 'Да' : 'Нет'}\n\n` +
+          `*Предметы:*\n${itemsText || '  Нет предметов'}`;
+
+        await bot.editMessageText(text, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown',
+          reply_markup: keyboard,
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Изменить изображение кейса
+      else if (data.startsWith('case_image_')) {
+        const caseId = parseInt(data.replace('case_image_', ''));
+        userStates.set(userId, { action: 'updating_case_image', caseId });
+
+        await bot.sendMessage(chatId, '🖼️ Отправьте новое изображение для кейса:');
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Добавить предмет в кейс
+      else if (data.startsWith('case_additem_')) {
+        const caseId = parseInt(data.replace('case_additem_', ''));
+
+        await bot.editMessageText(
+          `🎁 *Добавление предмета в кейс #${caseId}*\n\n` +
+          'Отправьте данные в формате:\n' +
+          '```\n' +
+          'Название: Алмаз\n' +
+          'Сумма: 500\n' +
+          'Шанс: 10\n' +
+          'Редкость: rare\n' +
+          '```\n\n' +
+          'После этого отправьте изображение предмета.',
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [[{ text: '🔙 Назад', callback_data: `case_edit_${caseId}` }]],
+            },
+          }
+        );
+        userStates.set(userId, { action: 'adding_item', caseId });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Список предметов кейса
+      else if (data.startsWith('case_items_')) {
+        const caseId = parseInt(data.replace('case_items_', ''));
+        const items = db.prepare('SELECT * FROM case_items WHERE case_id = ?').all(caseId);
+
+        if (items.length === 0) {
+          await bot.sendMessage(chatId, '📋 В этом кейсе пока нет предметов.');
+        } else {
+          const buttons = items.map((it) => [
+            { text: `${it.label_ru} (${it.amount}⭐)`, callback_data: `item_edit_${it.id}` },
+          ]);
+          buttons.push([{ text: '🔙 Назад', callback_data: `case_edit_${caseId}` }]);
+
+          await bot.sendMessage(chatId, '📋 *Предметы кейса:*', {
+            parse_mode: 'Markdown',
+            reply_markup: { inline_keyboard: buttons },
+          });
+        }
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Удалить кейс
+      else if (data.startsWith('case_delete_')) {
+        const caseId = parseInt(data.replace('case_delete_', ''));
+
+        db.prepare('DELETE FROM case_items WHERE case_id = ?').run(caseId);
+        db.prepare('DELETE FROM cases WHERE id = ?').run(caseId);
+
+        await bot.editMessageText('✅ Кейс успешно удален!', {
+          chat_id: chatId,
+          message_id: messageId,
           reply_markup: {
-            inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_cases' }]],
+            inline_keyboard: [[{ text: '🔙 К списку', callback_data: 'case_list' }]],
           },
         });
-      } else {
-        const buttons = cases.map((c) => [
-          { text: `${c.name_ru} (${c.price_coins}⭐)`, callback_data: `case_edit_${c.id}` },
-        ]);
-        buttons.push([{ text: '🔙 Назад', callback_data: 'admin_cases' }]);
+        bot.answerCallbackQuery(query.id);
+      }
 
-        bot.editMessageText('📋 *Список кейсов*\n\nВыберите кейс для редактирования:', {
+      // Управление игроками
+      else if (data === 'admin_players') {
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '💰 Добавить валюту', callback_data: 'player_add_currency' }],
+            [{ text: '📊 Статистика игроков', callback_data: 'player_stats' }],
+            [{ text: '🔙 Назад', callback_data: 'admin_back' }],
+          ],
+        };
+
+        await bot.editMessageText('👥 *Управление игроками*\n\nВыберите действие:', {
           chat_id: chatId,
           message_id: messageId,
           parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: buttons },
+          reply_markup: keyboard,
         });
-      }
-      bot.answerCallbackQuery(query.id);
-    }
-
-    // Редактирование кейса
-    else if (data.startsWith('case_edit_')) {
-      const caseId = parseInt(data.replace('case_edit_', ''));
-      const caseData = db.prepare('SELECT * FROM cases WHERE id = ?').get(caseId);
-
-      if (!caseData) {
-        return bot.answerCallbackQuery(query.id, { text: '❌ Кейс не найден' });
+        bot.answerCallbackQuery(query.id);
       }
 
-      const items = db.prepare('SELECT * FROM case_items WHERE case_id = ?').all(caseId);
-      const itemsText = items.map((it) => `  • ${it.label_ru}: ${it.amount}⭐ (${it.chance}%)`).join('\n');
+      // Добавить валюту
+      else if (data === 'player_add_currency') {
+        await bot.editMessageText(
+          '💰 *Добавить валюту игроку*\n\n' +
+          'Используйте команду:\n' +
+          '`/addcoins <telegram_id> <количество>`\n\n' +
+          'Например: `/addcoins 123456789 1000`',
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_players' }]],
+            },
+          }
+        );
+        bot.answerCallbackQuery(query.id);
+      }
 
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '✏️ Изменить цену', callback_data: `case_price_${caseId}` }],
-          [{ text: '🎁 Управление предметами', callback_data: `case_items_${caseId}` }],
-          [{ text: '🗑️ Удалить кейс', callback_data: `case_delete_${caseId}` }],
-          [{ text: '🔙 Назад', callback_data: 'case_list' }],
-        ],
-      };
+      // Статистика игроков
+      else if (data === 'player_stats') {
+        const stats = db.prepare(`
+          SELECT COUNT(*) as total,
+                 SUM(balance) as total_balance,
+                 SUM(demo_balance) as total_demo
+          FROM users
+        `).get();
 
-      const text = `📦 *${caseData.name_ru}*\n\n` +
-        `Цена: ${caseData.price_coins}⭐\n` +
-        `Редкость: ${caseData.rarity}\n` +
-        `Включен: ${caseData.enabled ? 'Да' : 'Нет'}\n\n` +
-        `*Предметы:*\n${itemsText || '  Нет предметов'}`;
+        const topPlayers = db.prepare(`
+          SELECT telegram_id, username, balance
+          FROM users
+          ORDER BY balance DESC
+          LIMIT 5
+        `).all();
 
-      bot.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: keyboard,
-      });
-      bot.answerCallbackQuery(query.id);
-    }
+        let text = '📊 *Статистика игроков*\n\n';
+        text += `Всего игроков: ${stats.total}\n`;
+        text += `Общий баланс: ${stats.total_balance || 0}⭐\n`;
+        text += `Демо баланс: ${stats.total_demo || 0}⭐\n\n`;
+        text += '*Топ-5 игроков:*\n';
+        topPlayers.forEach((p, i) => {
+          text += `${i + 1}. @${p.username || 'unknown'} - ${p.balance}⭐\n`;
+        });
 
-    // Управление игроками
-    else if (data === 'admin_players') {
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '💰 Добавить валюту', callback_data: 'player_add_currency' }],
-          [{ text: '📊 Статистика игроков', callback_data: 'player_stats' }],
-          [{ text: '🔙 Назад', callback_data: 'admin_back' }],
-        ],
-      };
-
-      bot.editMessageText('👥 *Управление игроками*\n\nВыберите действие:', {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: keyboard,
-      });
-      bot.answerCallbackQuery(query.id);
-    }
-
-    // Добавить валюту игроку
-    else if (data === 'player_add_currency') {
-      bot.editMessageText(
-        '💰 *Добавить валюту игроку*\n\n' +
-        'Отправьте сообщение в формате:\n' +
-        '`/addcoins <telegram_id> <количество>`\n\n' +
-        'Например: `/addcoins 123456789 1000`',
-        {
+        await bot.editMessageText(text, {
           chat_id: chatId,
           message_id: messageId,
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_players' }]],
           },
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Настройки игры
+      else if (data === 'admin_settings') {
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '🎲 Настроить шансы крэша', callback_data: 'settings_crash' }],
+            [{ text: '🔙 Назад', callback_data: 'admin_back' }],
+          ],
+        };
+
+        await bot.editMessageText('⚙️ *Настройки игры*\n\nВыберите раздел:', {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown',
+          reply_markup: keyboard,
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Настройки крэша
+      else if (data === 'settings_crash') {
+        await bot.editMessageText(
+          '🎲 *Настройки шансов крэша*\n\n' +
+          'Текущие настройки находятся в файле:\n' +
+          '`src/game/crashPoint.js`\n\n' +
+          'Для изменения шансов отредактируйте функцию `generateCrashPoint()`',
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_settings' }]],
+            },
+          }
+        );
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Назад в главное меню
+      else if (data === 'admin_back') {
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '📦 Управление кейсами', callback_data: 'admin_cases' }],
+            [{ text: '👥 Управление игроками', callback_data: 'admin_players' }],
+            [{ text: '⚙️ Настройки игры', callback_data: 'admin_settings' }],
+          ],
+        };
+
+        await bot.editMessageText('🔧 *Админ-панель*\n\nВыберите раздел:', {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: 'Markdown',
+          reply_markup: keyboard,
+        });
+        bot.answerCallbackQuery(query.id);
+      }
+    } catch (err) {
+      console.error('[bot] Callback error:', err);
+      bot.answerCallbackQuery(query.id, { text: '❌ Ошибка: ' + err.message });
+    }
+  });
+
+  // Обработка текстовых сообщений
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const text = msg.text;
+
+    if (!isAdmin(userId)) return;
+    if (!text || text.startsWith('/')) return;
+
+    const state = userStates.get(userId);
+    if (!state) return;
+
+    try {
+      // Создание кейса
+      if (state.action === 'creating_case') {
+        const nameMatch = text.match(/Название:\s*(.+)/i);
+        const priceMatch = text.match(/Цена:\s*(\d+)/i);
+        const rarityMatch = text.match(/Редкость:\s*(\w+)/i);
+
+        if (!nameMatch || !priceMatch || !rarityMatch) {
+          return bot.sendMessage(chatId, '❌ Неверный формат. Проверьте данные.');
         }
-      );
-      bot.answerCallbackQuery(query.id);
+
+        const name = nameMatch[1].trim();
+        const price = parseInt(priceMatch[1]);
+        const rarity = rarityMatch[1].toLowerCase();
+
+        userStates.set(userId, {
+          action: 'creating_case_waiting_image',
+          name,
+          price,
+          rarity,
+        });
+
+        bot.sendMessage(chatId, '✅ Данные приняты! Теперь отправьте изображение кейса.');
+      }
+
+      // Добавление предмета
+      else if (state.action === 'adding_item') {
+        const nameMatch = text.match(/Название:\s*(.+)/i);
+        const amountMatch = text.match(/Сумма:\s*(\d+)/i);
+        const chanceMatch = text.match(/Шанс:\s*([\d.]+)/i);
+        const rarityMatch = text.match(/Редкость:\s*(\w+)/i);
+
+        if (!nameMatch || !amountMatch || !chanceMatch) {
+          return bot.sendMessage(chatId, '❌ Неверный формат. Проверьте данные.');
+        }
+
+        const name = nameMatch[1].trim();
+        const amount = parseInt(amountMatch[1]);
+        const chance = parseFloat(chanceMatch[1]);
+        const rarity = rarityMatch ? rarityMatch[1].toLowerCase() : 'common';
+
+        userStates.set(userId, {
+          action: 'adding_item_waiting_image',
+          caseId: state.caseId,
+          name,
+          amount,
+          chance,
+          rarity,
+        });
+
+        bot.sendMessage(chatId, '✅ Данные приняты! Теперь отправьте изображение предмета.');
+      }
+    } catch (err) {
+      console.error('[bot] Message error:', err);
+      bot.sendMessage(chatId, `❌ Ошибка: ${err.message}`);
     }
+  });
 
-    // Статистика игроков
-    else if (data === 'player_stats') {
-      const stats = db.prepare(`
-        SELECT COUNT(*) as total,
-               SUM(balance) as total_balance,
-               SUM(demo_balance) as total_demo
-        FROM users
-      `).get();
+  // Обработка фото
+  bot.on('photo', async (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
 
-      const topPlayers = db.prepare(`
-        SELECT telegram_id, username, balance
-        FROM users
-        ORDER BY balance DESC
-        LIMIT 5
-      `).all();
+    if (!isAdmin(userId)) return;
 
-      let text = '📊 *Статистика игроков*\n\n';
-      text += `Всего игроков: ${stats.total}\n`;
-      text += `Общий баланс: ${stats.total_balance}⭐\n`;
-      text += `Демо баланс: ${stats.total_demo}⭐\n\n`;
-      text += '*Топ-5 игроков:*\n';
-      topPlayers.forEach((p, i) => {
-        text += `${i + 1}. @${p.username || 'unknown'} - ${p.balance}⭐\n`;
-      });
+    const state = userStates.get(userId);
+    if (!state) return;
 
-      bot.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_players' }]],
-        },
-      });
-      bot.answerCallbackQuery(query.id);
-    }
+    try {
+      const photo = msg.photo[msg.photo.length - 1];
+      const file = await bot.getFile(photo.file_id);
+      const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+      const fileName = `${Date.now()}_${file.file_path.split('/').pop()}`;
+      const filePath = join(UPLOADS_DIR, fileName);
 
-    // Настройки игры
-    else if (data === 'admin_settings') {
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '🎲 Настроить шансы', callback_data: 'settings_chances' }],
-          [{ text: '🔙 Назад', callback_data: 'admin_back' }],
-        ],
-      };
+      await downloadFile(fileUrl, filePath);
+      const imageUrl = `/uploads/${fileName}`;
 
-      bot.editMessageText('⚙️ *Настройки игры*\n\nВыберите раздел:', {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: keyboard,
-      });
-      bot.answerCallbackQuery(query.id);
-    }
+      // Завершение создания кейса
+      if (state.action === 'creating_case_waiting_image') {
+        const slug = state.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-    // Назад в главное меню
-    else if (data === 'admin_back') {
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '📦 Управление кейсами', callback_data: 'admin_cases' }],
-          [{ text: '👥 Управление игроками', callback_data: 'admin_players' }],
-          [{ text: '⚙️ Настройки игры', callback_data: 'admin_settings' }],
-        ],
-      };
+        const result = db.prepare(`
+          INSERT INTO cases (slug, name_ru, price_coins, rarity, image_url, enabled)
+          VALUES (?, ?, ?, ?, ?, 1)
+        `).run(slug, state.name, state.price, state.rarity, imageUrl);
 
-      bot.editMessageText('🔧 *Админ-панель*\n\nВыберите раздел:', {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: 'Markdown',
-        reply_markup: keyboard,
-      });
-      bot.answerCallbackQuery(query.id);
+        userStates.delete(userId);
+
+        bot.sendMessage(
+          chatId,
+          `✅ Кейс "${state.name}" успешно создан!\n\n` +
+          `ID: ${result.lastInsertRowid}\n` +
+          `Цена: ${state.price}⭐\n` +
+          `Редкость: ${state.rarity}\n\n` +
+          `Теперь добавьте предметы через меню /admin`
+        );
+      }
+
+      // Обновление изображения кейса
+      else if (state.action === 'updating_case_image') {
+        db.prepare('UPDATE cases SET image_url = ? WHERE id = ?').run(imageUrl, state.caseId);
+        userStates.delete(userId);
+        bot.sendMessage(chatId, '✅ Изображение кейса обновлено!');
+      }
+
+      // Завершение добавления предмета
+      else if (state.action === 'adding_item_waiting_image') {
+        db.prepare(`
+          INSERT INTO case_items (case_id, label_ru, amount, chance, rarity, image_url)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(state.caseId, state.name, state.amount, state.chance, state.rarity, imageUrl);
+
+        userStates.delete(userId);
+
+        bot.sendMessage(
+          chatId,
+          `✅ Предмет "${state.name}" добавлен в кейс #${state.caseId}!\n\n` +
+          `Сумма: ${state.amount}⭐\n` +
+          `Шанс: ${state.chance}%\n` +
+          `Редкость: ${state.rarity}`
+        );
+      }
+    } catch (err) {
+      console.error('[bot] Photo error:', err);
+      bot.sendMessage(chatId, `❌ Ошибка загрузки изображения: ${err.message}`);
     }
   });
 
@@ -282,141 +576,6 @@ export function startBot(token) {
       );
     } catch (err) {
       bot.sendMessage(chatId, `❌ Ошибка: ${err.message}`);
-    }
-  });
-
-  // Команда создания кейса
-  bot.onText(/\/createcase/, (msg) => {
-    const chatId = msg.chat.id;
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '❌ У вас нет доступа к этой команде.');
-    }
-
-    bot.sendMessage(
-      chatId,
-      '📦 *Создание кейса*\n\n' +
-      'Отправьте данные в формате:\n' +
-      '```\n' +
-      '/newcase\n' +
-      'Название: Лунный кейс\n' +
-      'Цена: 100\n' +
-      'Редкость: rare\n' +
-      'URL изображения: https://example.com/image.png\n' +
-      '```\n\n' +
-      'Редкость: free, common, rare, epic, limited',
-      { parse_mode: 'Markdown' }
-    );
-  });
-
-  // Обработка создания кейса
-  bot.onText(/\/newcase/, (msg) => {
-    const chatId = msg.chat.id;
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '❌ У вас нет доступа к этой команде.');
-    }
-
-    const text = msg.text;
-    const nameMatch = text.match(/Название:\s*(.+)/i);
-    const priceMatch = text.match(/Цена:\s*(\d+)/i);
-    const rarityMatch = text.match(/Редкость:\s*(\w+)/i);
-    const imageMatch = text.match(/URL изображения:\s*(.+)/i);
-
-    if (!nameMatch || !priceMatch || !rarityMatch) {
-      return bot.sendMessage(chatId, '❌ Неверный формат. Проверьте данные.');
-    }
-
-    const name = nameMatch[1].trim();
-    const price = parseInt(priceMatch[1]);
-    const rarity = rarityMatch[1].toLowerCase();
-    const imageUrl = imageMatch ? imageMatch[1].trim() : null;
-
-    try {
-      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-      const result = db.prepare(`
-        INSERT INTO cases (slug, name_ru, price_coins, rarity, image_url, enabled)
-        VALUES (?, ?, ?, ?, ?, 1)
-      `).run(slug, name, price, rarity, imageUrl);
-
-      bot.sendMessage(
-        chatId,
-        `✅ Кейс "${name}" успешно создан!\n\n` +
-        `ID: ${result.lastInsertRowid}\n` +
-        `Цена: ${price}⭐\n` +
-        `Редкость: ${rarity}\n\n` +
-        `Теперь добавьте предметы командой:\n` +
-        `/additem ${result.lastInsertRowid}`
-      );
-    } catch (err) {
-      bot.sendMessage(chatId, `❌ Ошибка создания кейса: ${err.message}`);
-    }
-  });
-
-  // Команда добавления предмета в кейс
-  bot.onText(/\/additem (\d+)/, (msg, match) => {
-    const chatId = msg.chat.id;
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '❌ У вас нет доступа к этой команде.');
-    }
-
-    const caseId = match[1];
-    bot.sendMessage(
-      chatId,
-      `🎁 *Добавление предмета в кейс #${caseId}*\n\n` +
-      'Отправьте данные в формате:\n' +
-      '```\n' +
-      `/item ${caseId}\n` +
-      'Название: Алмаз\n' +
-      'Сумма: 500\n' +
-      'Шанс: 10\n' +
-      'Редкость: rare\n' +
-      'URL изображения: https://example.com/diamond.png\n' +
-      '```',
-      { parse_mode: 'Markdown' }
-    );
-  });
-
-  // Обработка добавления предмета
-  bot.onText(/\/item (\d+)/, (msg, match) => {
-    const chatId = msg.chat.id;
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '❌ У вас нет доступа к этой команде.');
-    }
-
-    const caseId = parseInt(match[1]);
-    const text = msg.text;
-
-    const nameMatch = text.match(/Название:\s*(.+)/i);
-    const amountMatch = text.match(/Сумма:\s*(\d+)/i);
-    const chanceMatch = text.match(/Шанс:\s*([\d.]+)/i);
-    const rarityMatch = text.match(/Редкость:\s*(\w+)/i);
-    const imageMatch = text.match(/URL изображения:\s*(.+)/i);
-
-    if (!nameMatch || !amountMatch || !chanceMatch) {
-      return bot.sendMessage(chatId, '❌ Неверный формат. Проверьте данные.');
-    }
-
-    const name = nameMatch[1].trim();
-    const amount = parseInt(amountMatch[1]);
-    const chance = parseFloat(chanceMatch[1]);
-    const rarity = rarityMatch ? rarityMatch[1].toLowerCase() : 'common';
-    const imageUrl = imageMatch ? imageMatch[1].trim() : null;
-
-    try {
-      db.prepare(`
-        INSERT INTO case_items (case_id, label_ru, amount, chance, rarity, image_url)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(caseId, name, amount, chance, rarity, imageUrl);
-
-      bot.sendMessage(
-        chatId,
-        `✅ Предмет "${name}" добавлен в кейс #${caseId}!\n\n` +
-        `Сумма: ${amount}⭐\n` +
-        `Шанс: ${chance}%\n` +
-        `Редкость: ${rarity}`
-      );
-    } catch (err) {
-      bot.sendMessage(chatId, `❌ Ошибка добавления предмета: ${err.message}`);
     }
   });
 
