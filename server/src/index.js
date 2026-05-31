@@ -16,6 +16,8 @@ import { startBot } from './bot/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIST = join(__dirname, '../../client/dist');
+const DATA_DIR = process.env.DATA_DIR || join(__dirname, '../data');
+const UPLOADS_DIR = join(DATA_DIR, 'uploads');
 const IS_PROD = existsSync(CLIENT_DIST);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -37,7 +39,7 @@ app.use('/api', apiRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/upload', uploadRouter);
-app.use('/uploads', express.static(join(__dirname, '../uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 app.get('/health', (_req, res) => res.json({ ok: true, phase: engine.phase }));
 
 // Статика фронтенда (только в prod — когда dist собран)

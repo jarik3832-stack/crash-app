@@ -1,13 +1,17 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { db, getAllGameSettings, setGameSetting } from '../db/index.js';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import http from 'node:http';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const UPLOADS_DIR = join(__dirname, '../../uploads');
+const DATA_DIR = process.env.DATA_DIR || join(__dirname, '../../data');
+const UPLOADS_DIR = join(DATA_DIR, 'uploads');
+
+// Создаем папку для загрузок
+mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const ADMIN_TELEGRAM_ID = parseInt(process.env.ADMIN_TELEGRAM_ID || '0');
 

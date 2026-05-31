@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { STARTING_BALANCE, STARTING_GEMS, STARTING_DEMO_BALANCE } from '../game/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, '..', '..', 'data');
+const dataDir = process.env.DATA_DIR || join(__dirname, '..', '..', 'data');
 const dbPath = join(dataDir, 'crash.db');
 mkdirSync(dataDir, { recursive: true });
 const schemaPath = join(__dirname, 'schema.sql');
