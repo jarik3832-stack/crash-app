@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { api } from '../api/http.js';
 import { t } from '../i18n/ru.js';
 import { AppHeader } from '../components/AppHeader.jsx';
@@ -100,7 +100,7 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
                   <div className="cases-section-divider">
                     <span>{RARITY_LABELS[rarity]}</span>
                   </div>
-                  <div className="cases-scroll-container">
+                  <div className="cases-grid">
                     {group.map((c) => (
                       <div key={c.slug} className="case-card-new" onClick={() => openDetail(c)}>
                         {c.rarity === 'limited' && <div className="case-badge-limited">LIMITED</div>}
@@ -184,6 +184,28 @@ export function Cases({ user, onBalanceChange, telegramApi }) {
 function CaseDetailNew({ c, user, opening, error, onOpen, onBack }) {
   const canAfford = user.balance >= c.price_coins;
   const shortage = canAfford ? 0 : c.price_coins - user.balance;
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    let scrollPosition = 0;
+    const scrollSpeed = 1;
+    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+
+    const autoScroll = () => {
+      scrollPosition += scrollSpeed;
+      if (scrollPosition >= maxScroll) {
+        scrollPosition = 0;
+      }
+      scrollContainer.scrollLeft = scrollPosition;
+    };
+
+    const interval = setInterval(autoScroll, 30);
+
+    return () => clearInterval(interval);
+  }, [c.items]);
 
   return (
     <div className="case-detail-new">
@@ -199,7 +221,7 @@ function CaseDetailNew({ c, user, opening, error, onOpen, onBack }) {
         {c.rarity === 'limited' && <div className="case-badge-limited-large">LIMITED</div>}
       </div>
 
-      <div className="case-items-scroll-horizontal">
+      <div className="case-items-scroll-horizontal" ref={scrollRef}>
         {c.items.map((it) => (
           <div key={it.id} className="case-item-card-horizontal">
             {it.rarity && it.rarity !== 'common' && (

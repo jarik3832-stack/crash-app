@@ -2196,19 +2196,11 @@ button { cursor: pointer; }
   margin: 0 -12px;
   padding-left: 12px;
   padding-right: 12px;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
 }
 .case-items-scroll-horizontal::-webkit-scrollbar {
-  height: 4px;
-}
-.case-items-scroll-horizontal::-webkit-scrollbar-track {
-  background: var(--surface-2);
-  border-radius: 2px;
-}
-.case-items-scroll-horizontal::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
+  display: none;
 }
 
 .case-item-card-horizontal {
