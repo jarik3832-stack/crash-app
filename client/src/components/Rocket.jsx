@@ -77,22 +77,7 @@ export function Rocket({ game }) {
       const rocketX = cx + offX;
       const rocketY = cy + offY;
 
-      if (phase !== 'betting') {
-        ctx.beginPath();
-        const steps = 40;
-        for (let i = 0; i <= steps; i++) {
-          const ti = (i / steps) * tt;
-          const xi = cx + (-ampX + ampX * 2 * ti);
-          const yi = cy + (ampY - ampY * 2 * ti);
-          if (i === 0) ctx.moveTo(xi, yi); else ctx.lineTo(xi, yi);
-        }
-        const stroke = ctx.createLinearGradient(cx - ampX, cy + ampY, rocketX, rocketY);
-        stroke.addColorStop(0, 'rgba(203,255,88,0)');
-        stroke.addColorStop(1, phase === 'crashed' ? 'rgba(255,80,80,0.9)' : 'rgba(203,255,88,0.9)');
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-      }
+      // Убрана траектория
 
       const angle = phase === 'crashed' ? 90 : -45 + tt * 45;
       setRocketPos({ x: rocketX, y: rocketY, rotate: angle });
@@ -138,7 +123,7 @@ export function Rocket({ game }) {
           pointerEvents: 'none',
           filter: game.phase === 'crashed'
             ? 'grayscale(1) brightness(0.5)'
-            : 'drop-shadow(0 0 12px rgba(255,120,40,0.7))',
+            : 'drop-shadow(0 0 12px rgba(255,120,40,0.7)) grayscale(0) brightness(1)',
         }}
       />
       <div className={mainClass}>{mainText}</div>
