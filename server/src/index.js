@@ -12,6 +12,7 @@ import paymentsRouter from './routes/payments.js';
 import uploadRouter from './routes/upload.js';
 import { attachSockets } from './sockets/handlers.js';
 import { engine } from './game/engine.js';
+import { startBot } from './bot/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIST = join(__dirname, '../../client/dist');
@@ -56,6 +57,11 @@ attachSockets(io);
 
 // Start the game loop.
 engine.start();
+
+// Start Telegram bot
+if (process.env.TELEGRAM_BOT_TOKEN) {
+  startBot(process.env.TELEGRAM_BOT_TOKEN);
+}
 
 httpServer.listen(PORT, () => {
   console.log(`[server] listening on :${PORT}`);
