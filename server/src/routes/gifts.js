@@ -1,25 +1,24 @@
 import { Router } from 'express';
 import https from 'node:https';
-import http from 'node:http';
 
 export const giftsRouter = Router();
 
-// Кэш file_id -> URL
-const urlCache = new Map();
+// Кэш name -> file_path
+const pathCache = new Map();
 
-async function fetchJson(url) {
+function tgGet(token, method, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const url = `https://api.telegram.org/bot${token}/${method}${qs ? '?' + qs : ''}`;
   return new Promise((resolve, reject) => {
-    const mod = url.startsWith('https') ? https : http;
-    mod.get(url, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
+    https.get(url, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
     }).on('error', reject);
   });
 }
 
-// GET /api/gifts/image?name=InstantRamen
-// Возвращает URL изображения из Telegram sticker set
+// GET /api/gifts/image?name=instant_ramen
 giftsRouter.get('/image', async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(400).json({ error: 'missing name' });
@@ -27,44 +26,31 @@ giftsRouter.get('/image', async (req, res) => {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return res.status(503).json({ error: 'no bot token' });
 
-  const cacheKey = name;
-  if (urlCache.has(cacheKey)) {
-    return res.redirect(urlCache.get(cacheKey));
-  }
-
   try {
-    // Получаем стикер-сет подарка
-    const setData = await fetchJson(
-      `https://api.telegram.org/bot${token}/getStickerSet?name=${encodeURIComponent(name)}`
-    );
+    let filePath = pathCache.get(name);
 
-    if (!setData.ok || !setData.result?.stickers?.length) {
-      return res.status(404).json({ error: 'sticker set not found' });
+    if (!filePath) {
+      const setData = await tgGet(token, 'getStickerSet', { name });
+      if (!setData.ok || !setData.result?.stickers?.length) {
+        return res.status(404).json({ error: 'not found' });
+      }
+      const s = setData.result.stickers[0];
+      const fileId = s.thumbnail?.file_id || s.file_id;
+      const fileData = await tgGet(token, 'getFile', { file_id: fileId });
+      if (!fileData.ok) return res.status(404).json({ error: 'file not found' });
+      filePath = fileData.result.file_path;
+      pathCache.set(name, filePath);
     }
 
-    const sticker = setData.result.stickers[0];
-    // Получаем thumbnail или саму наклейку
-    const fileId = sticker.thumbnail?.file_id || sticker.file_id;
+    const imgUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
 
-    // Получаем путь файла
-    const fileData = await fetchJson(
-      `https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`
-    );
-
-    if (!fileData.ok) return res.status(404).json({ error: 'file not found' });
-
-    const fileUrl = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`;
-    urlCache.set(cacheKey, fileUrl);
-
-    // Проксируем изображение
-    https.get(fileUrl, (imgRes) => {
+    https.get(imgUrl, (imgRes) => {
       res.setHeader('Content-Type', imgRes.headers['content-type'] || 'image/webp');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Cache-Control', 'public, max-age=604800');
       imgRes.pipe(res);
-    }).on('error', () => res.status(500).json({ error: 'proxy failed' }));
+    }).on('error', () => res.status(500).json({ error: 'proxy error' }));
 
   } catch (err) {
-    console.error('[gifts] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
