@@ -30,12 +30,15 @@ const GIFTS_BASE = 'https://telegifter.ru/wp-content/themes/gifts/assets/img/gif
 function giftImg(name) {
   return `${GIFTS_BASE}${encodeURIComponent(name)}.webp`;
 }
+function giftProxy(name) {
+  return `/api/gifts/image?name=${encodeURIComponent(name)}`;
+}
 
 // Список подарков с правильными именами стикер-сетов (snake_case)
 const TG_GIFTS = [
   { name: 'Plush Pepe',       stars: 644615, img: giftImg('Plush Pepe') },
   { name: 'Heart Locket',     stars: 143409, img: giftImg('Heart Locket') },
-  { name: "Durov's Cap",      stars: 55875, img: giftImg("Durov's Cap") },
+  { name: "Durov's Cap",      stars: 55875, img: giftImg("Durovs Cap") },
   { name: 'Precious Peach',   stars: 29639, img: giftImg('Precious Peach') },
   { name: 'Heroic Helmet',    stars: 20199, img: giftImg('Heroic Helmet') },
   { name: 'Scared Cat',       stars: 17916, img: giftImg('Scared Cat') },
@@ -57,7 +60,7 @@ const TG_GIFTS = [
   { name: 'Vintage Cigar',    stars: 3202, img: giftImg('Vintage Cigar') },
   { name: 'Signet Ring',      stars: 3173, img: giftImg('Signet Ring') },
   { name: 'Eternal Rose',     stars: 2376, img: giftImg('Eternal Rose') },
-  { name: "Khabib's Papakha", stars: 2245, img: giftImg("Khabib's Papakha") },
+  { name: "Khabib's Papakha", stars: 2245, img: giftImg("Khabibs Papakha") },
   { name: 'Cupid Charm',      stars: 1857, img: giftImg('Cupid Charm') },
   { name: 'Sky Stilettos',    stars: 1593, img: giftImg('Sky Stilettos') },
   { name: 'Ionic Dryer',      stars: 1404, img: giftImg('Ionic Dryer') },
@@ -81,16 +84,16 @@ const TG_GIFTS = [
   { name: 'Swag Bag',         stars: 447, img: giftImg('Swag Bag') },
   { name: 'Stellar Rocket',   stars: 433, img: giftImg('Stellar Rocket') },
   { name: 'Snow Globe',       stars: 419, img: giftImg('Snow Globe') },
-  { name: 'Timeless Book',    stars: 413, img: giftImg('Timeless Book') },
+  { name: 'Timeless Book',    stars: 413, img: giftProxy('timeless_book') },
   { name: 'Star Notepad',     stars: 413, img: giftImg('Star Notepad') },
   { name: 'B-Day Candle',     stars: 407, img: giftImg('B-Day Candle') },
   { name: 'Money Pot',        stars: 388, img: giftImg('Money Pot') },
   { name: 'Hex Pot',          stars: 385, img: giftImg('Hex Pot') },
   { name: 'Cookie Heart',     stars: 385, img: giftImg('Cookie Heart') },
   { name: 'Santa Hat',        stars: 381, img: giftImg('Santa Hat') },
-  { name: 'Victory Medal',    stars: 371, img: giftImg('Victory Medal') },
+  { name: 'Victory Medal',    stars: 371, img: giftProxy('victory_medal') },
   { name: 'Party Sparkler',   stars: 363, img: giftImg('Party Sparkler') },
-  { name: 'Mood Pack',        stars: 363, img: giftImg('Mood Pack') },
+  { name: 'Mood Pack',        stars: 363, img: giftProxy('mood_pack') },
   { name: 'Easter Egg',       stars: 361, img: giftImg('Easter Egg') },
   { name: 'Fresh Socks',      stars: 357, img: giftImg('Fresh Socks') },
   { name: 'Spiced Wine',      stars: 355, img: giftImg('Spiced Wine') },
@@ -98,7 +101,7 @@ const TG_GIFTS = [
   { name: 'Ginger Cookie',    stars: 336, img: giftImg('Ginger Cookie') },
   { name: 'Happy Brownie',    stars: 333, img: giftImg('Happy Brownie') },
   { name: 'Tama Gadget',      stars: 332, img: giftImg('Tama Gadget') },
-  { name: 'Jack-in-the-Box',  stars: 330, img: giftImg('Jack-in-the-Box') },
+  { name: 'Jack-in-the-Box',  stars: 330, img: giftImg('Jack in the Box') },
   { name: 'Hypno Lollipop',   stars: 330, img: giftImg('Hypno Lollipop') },
   { name: 'Jester Hat',       stars: 321, img: giftImg('Jester Hat') },
   { name: 'Lol Pop',          stars: 310, img: giftImg('Lol Pop') },
@@ -110,7 +113,7 @@ const TG_GIFTS = [
   { name: 'Instant Ramen',    stars: 273, img: giftImg('Instant Ramen') },
   { name: 'Lunar Snake',      stars: 267, img: giftImg('Lunar Snake') },
   { name: 'Candy Cane',       stars: 266, img: giftImg('Candy Cane') },
-  { name: 'Chill Flame',      stars: 262, img: giftImg('Chill Flame') },
+  { name: 'Chill Flame',      stars: 262, img: giftProxy('chill_flame') },
   { name: 'Desk Calendar',    stars: 492, img: giftImg('Desk Calendar') },
   { name: 'Faith Amulet',     stars: 490, img: giftImg('Faith Amulet') },
   { name: 'Homemade Cake',    stars: 489, img: giftImg('Homemade Cake') },
