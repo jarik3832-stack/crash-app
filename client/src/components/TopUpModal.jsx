@@ -26,24 +26,109 @@ const METHODS = [
   { id: 'gifts',  label: 'Подарки',  emoji: '🐻' },
 ];
 
-// Список Telegram NFT подарков (актуальные примерные цены в звёздах)
+// Список Telegram NFT подарков с официальными изображениями
 const TG_GIFTS = [
-  { name: 'Heart Locket', sub: 'Random',       emoji: '💙', stars: 1096 },
-  { name: 'Nail Bracelet Moon Cat',             emoji: '🪬', stars: 499  },
-  { name: "Durov's Cap Jade",                   emoji: '🧢', stars: 432  },
-  { name: 'Swiss Watch Day Trader',             emoji: '⌚', stars: 375  },
-  { name: 'Loot Bag Riot Pack',                 emoji: '👜', stars: 350  },
-  { name: 'Precious Peach Neo-Chrome',          emoji: '🍑', stars: 332  },
-  { name: 'Victory Medal The Founder',          emoji: '🏅', stars: 285  },
-  { name: 'Jingle Bells Cash Machine',          emoji: '🔔', stars: 200  },
-  { name: 'Artisan Brick Grass Block',          emoji: '🟩', stars: 180  },
-  { name: 'Scared Cat', sub: 'Random',          emoji: '🐱', stars: 128  },
-  { name: 'Desk Calendar TON',                  emoji: '📅', stars: 100  },
-  { name: 'Lunar Snake', sub: 'Random',         emoji: '🐍', stars: 35   },
-  { name: 'Ice Cream', sub: 'Random',           emoji: '🍦', stars: 11   },
-  { name: 'Candy Cane', sub: 'Random',          emoji: '🍬', stars: 7    },
-  { name: 'Star', sub: 'Random',                emoji: '⭐', stars: 5    },
-  { name: 'Plush Pepe', sub: 'Random',          emoji: '🐸', stars: 3    },
+  { name: 'Plush Pepe',       stars: 644615, img: 'https://nft.fragment.com/gift/plushpepe.webp' },
+  { name: 'Heart Locket',     stars: 143409, img: 'https://nft.fragment.com/gift/heartlocket.webp' },
+  { name: "Durov's Cap",      stars: 55875,  img: 'https://nft.fragment.com/gift/durovcap.webp' },
+  { name: 'Precious Peach',   stars: 29639,  img: 'https://nft.fragment.com/gift/preciouspeach.webp' },
+  { name: 'Heroic Helmet',    stars: 20199,  img: 'https://nft.fragment.com/gift/heroichelmet.webp' },
+  { name: 'Scared Cat',       stars: 17916,  img: 'https://nft.fragment.com/gift/scaredcat.webp' },
+  { name: 'Astral Shard',     stars: 15150,  img: 'https://nft.fragment.com/gift/astralshard.webp' },
+  { name: 'Mighty Arm',       stars: 12889,  img: 'https://nft.fragment.com/gift/mightyarm.webp' },
+  { name: 'Loot Bag',         stars: 11959,  img: 'https://nft.fragment.com/gift/lootbag.webp' },
+  { name: 'Nail Bracelet',    stars: 11244,  img: 'https://nft.fragment.com/gift/nailbracelet.webp' },
+  { name: 'Ion Gem',          stars: 7374,   img: 'https://nft.fragment.com/gift/iongem.webp' },
+  { name: 'Perfume Bottle',   stars: 7308,   img: 'https://nft.fragment.com/gift/perfumebottle.webp' },
+  { name: 'Mini Oscar',       stars: 7308,   img: 'https://nft.fragment.com/gift/minioscар.webp' },
+  { name: 'Westside Sign',    stars: 7202,   img: 'https://nft.fragment.com/gift/westsidесign.webp' },
+  { name: 'Gem Signet',       stars: 6903,   img: 'https://nft.fragment.com/gift/gemsignet.webp' },
+  { name: 'Artisan Brick',    stars: 6491,   img: 'https://nft.fragment.com/gift/artisanbrick.webp' },
+  { name: 'Magic Potion',     stars: 6112,   img: 'https://nft.fragment.com/gift/magicpotion.webp' },
+  { name: 'Kissed Frog',      stars: 4637,   img: 'https://nft.fragment.com/gift/kissedfrog.webp' },
+  { name: 'Swiss Watch',      stars: 4517,   img: 'https://nft.fragment.com/gift/swisswatch.webp' },
+  { name: 'Sharp Tongue',     stars: 4452,   img: 'https://nft.fragment.com/gift/sharptongue.webp' },
+  { name: 'Genie Lamp',       stars: 4287,   img: 'https://nft.fragment.com/gift/genielamp.webp' },
+  { name: 'Bonded Ring',      stars: 3982,   img: 'https://nft.fragment.com/gift/bondedring.webp' },
+  { name: 'Neko Helmet',      stars: 3877,   img: 'https://nft.fragment.com/gift/nekohelmet.webp' },
+  { name: 'Toy Bear',         stars: 3842,   img: 'https://nft.fragment.com/gift/toybear.webp' },
+  { name: 'Vintage Cigar',    stars: 3202,   img: 'https://nft.fragment.com/gift/vintagecigar.webp' },
+  { name: 'Signet Ring',      stars: 3173,   img: 'https://nft.fragment.com/gift/signetring.webp' },
+  { name: 'Voodoo Doll',      stars: 2972,   img: 'https://nft.fragment.com/gift/voodoodoll.webp' },
+  { name: 'Electric Skull',   stars: 2816,   img: 'https://nft.fragment.com/gift/electricskull.webp' },
+  { name: 'Diamond Ring',     stars: 2509,   img: 'https://nft.fragment.com/gift/diamondring.webp' },
+  { name: 'Eternal Rose',     stars: 2376,   img: 'https://nft.fragment.com/gift/eternalrose.webp' },
+  { name: 'Bling Binky',      stars: 2324,   img: 'https://nft.fragment.com/gift/blingbinky.webp' },
+  { name: 'Rare Bird',        stars: 2293,   img: 'https://nft.fragment.com/gift/rarebird.webp' },
+  { name: "Khabib's Papakha", stars: 2245,   img: 'https://nft.fragment.com/gift/khabibpapakha.webp' },
+  { name: 'Cupid Charm',      stars: 1857,   img: 'https://nft.fragment.com/gift/cupidcharm.webp' },
+  { name: 'Sky Stilettos',    stars: 1593,   img: 'https://nft.fragment.com/gift/skystilettos.webp' },
+  { name: 'Ionic Dryer',      stars: 1404,   img: 'https://nft.fragment.com/gift/ionicdryer.webp' },
+  { name: 'Love Potion',      stars: 1395,   img: 'https://nft.fragment.com/gift/lovepotion.webp' },
+  { name: 'UFC Strike',       stars: 1339,   img: 'https://nft.fragment.com/gift/ufcstrike.webp' },
+  { name: 'Mad Pumpkin',      stars: 1142,   img: 'https://nft.fragment.com/gift/madpumpkin.webp' },
+  { name: 'Trapped Heart',    stars: 1136,   img: 'https://nft.fragment.com/gift/trappedheart.webp' },
+  { name: 'Skull Flower',     stars: 1047,   img: 'https://nft.fragment.com/gift/skullflower.webp' },
+  { name: 'Flying Broom',     stars: 1041,   img: 'https://nft.fragment.com/gift/flyingbroom.webp' },
+  { name: 'Snoop Cigar',      stars: 1032,   img: 'https://nft.fragment.com/gift/snoopcigаr.webp' },
+  { name: 'Record Player',    stars: 1008,   img: 'https://nft.fragment.com/gift/recordplayer.webp' },
+  { name: 'Crystal Ball',     stars: 917,    img: 'https://nft.fragment.com/gift/crystalball.webp' },
+  { name: 'Love Candle',      stars: 940,    img: 'https://nft.fragment.com/gift/lovecandle.webp' },
+  { name: 'Valentine Box',    stars: 882,    img: 'https://nft.fragment.com/gift/valentinebox.webp' },
+  { name: 'Sakura Flower',    stars: 878,    img: 'https://nft.fragment.com/gift/sakuraflower.webp' },
+  { name: 'Top Hat',          stars: 856,    img: 'https://nft.fragment.com/gift/tophat.webp' },
+  { name: 'Berry Box',        stars: 793,    img: 'https://nft.fragment.com/gift/berrybox.webp' },
+  { name: 'Jolly Chimp',      stars: 708,    img: 'https://nft.fragment.com/gift/jollychimр.webp' },
+  { name: 'Hanging Star',     stars: 702,    img: 'https://nft.fragment.com/gift/hangingstar.webp' },
+  { name: 'Bunny Muffin',     stars: 699,    img: 'https://nft.fragment.com/gift/bunnymuffin.webp' },
+  { name: 'Jelly Bunny',      stars: 675,    img: 'https://nft.fragment.com/gift/jellybunny.webp' },
+  { name: 'Jingle Bells',     stars: 668,    img: 'https://nft.fragment.com/gift/jinglebells.webp' },
+  { name: 'Joyful Bundle',    stars: 665,    img: 'https://nft.fragment.com/gift/joyfullbundle.webp' },
+  { name: 'Sleigh Bell',      stars: 663,    img: 'https://nft.fragment.com/gift/sleighbell.webp' },
+  { name: 'Evil Eye',         stars: 650,    img: 'https://nft.fragment.com/gift/evileye.webp' },
+  { name: 'Light Sword',      stars: 619,    img: 'https://nft.fragment.com/gift/lightsword.webp' },
+  { name: 'Witch Hat',        stars: 455,    img: 'https://nft.fragment.com/gift/witchhat.webp' },
+  { name: 'Restless Jar',     stars: 447,    img: 'https://nft.fragment.com/gift/restlessjar.webp' },
+  { name: 'Swag Bag',         stars: 447,    img: 'https://nft.fragment.com/gift/swagbag.webp' },
+  { name: 'Stellar Rocket',   stars: 433,    img: 'https://nft.fragment.com/gift/stellarrocket.webp' },
+  { name: 'Snow Globe',       stars: 419,    img: 'https://nft.fragment.com/gift/snowglobe.webp' },
+  { name: 'Snow Mittens',     stars: 414,    img: 'https://nft.fragment.com/gift/snowmittens.webp' },
+  { name: 'Timeless Book',    stars: 413,    img: 'https://nft.fragment.com/gift/timelessbook.webp' },
+  { name: 'Star Notepad',     stars: 413,    img: 'https://nft.fragment.com/gift/starnotepad.webp' },
+  { name: 'B-Day Candle',     stars: 407,    img: 'https://nft.fragment.com/gift/bdaycandle.webp' },
+  { name: 'Money Pot',        stars: 388,    img: 'https://nft.fragment.com/gift/moneypot.webp' },
+  { name: 'Hex Pot',          stars: 385,    img: 'https://nft.fragment.com/gift/hexpot.webp' },
+  { name: 'Cookie Heart',     stars: 385,    img: 'https://nft.fragment.com/gift/cookieheart.webp' },
+  { name: 'Santa Hat',        stars: 381,    img: 'https://nft.fragment.com/gift/santahat.webp' },
+  { name: 'Mousse Cake',      stars: 378,    img: 'https://nft.fragment.com/gift/moussecake.webp' },
+  { name: 'Victory Medal',    stars: 371,    img: 'https://nft.fragment.com/gift/victorymedal.webp' },
+  { name: 'Party Sparkler',   stars: 363,    img: 'https://nft.fragment.com/gift/partysparkler.webp' },
+  { name: 'Mood Pack',        stars: 363,    img: 'https://nft.fragment.com/gift/moodpack.webp' },
+  { name: 'Easter Egg',       stars: 361,    img: 'https://nft.fragment.com/gift/easteregg.webp' },
+  { name: 'Fresh Socks',      stars: 357,    img: 'https://nft.fragment.com/gift/freshsocks.webp' },
+  { name: 'Spiced Wine',      stars: 355,    img: 'https://nft.fragment.com/gift/spicedwine.webp' },
+  { name: 'Pretty Posy',      stars: 355,    img: 'https://nft.fragment.com/gift/prettyposy.webp' },
+  { name: 'Ginger Cookie',    stars: 336,    img: 'https://nft.fragment.com/gift/gingercookie.webp' },
+  { name: 'Happy Brownie',    stars: 333,    img: 'https://nft.fragment.com/gift/happybrownie.webp' },
+  { name: 'Tama Gadget',      stars: 332,    img: 'https://nft.fragment.com/gift/tamagadget.webp' },
+  { name: 'Jack-in-the-Box',  stars: 330,    img: 'https://nft.fragment.com/gift/jackinthebox.webp' },
+  { name: 'Hypno Lollipop',   stars: 330,    img: 'https://nft.fragment.com/gift/hypnolollipop.webp' },
+  { name: 'Lol Pop',          stars: 310,    img: 'https://nft.fragment.com/gift/lolpop.webp' },
+  { name: 'Jester Hat',       stars: 321,    img: 'https://nft.fragment.com/gift/jesterhat.webp' },
+  { name: 'Pet Snake',        stars: 317,    img: 'https://nft.fragment.com/gift/petsnake.webp' },
+  { name: 'Winter Wreath',    stars: 312,    img: 'https://nft.fragment.com/gift/winterwreath.webp' },
+  { name: 'Pool Float',       stars: 311,    img: 'https://nft.fragment.com/gift/poolfloat.webp' },
+  { name: 'Holiday Drink',    stars: 295,    img: 'https://nft.fragment.com/gift/holidaydrink.webp' },
+  { name: 'Big Year',         stars: 292,    img: 'https://nft.fragment.com/gift/bigyear.webp' },
+  { name: 'Ice Cream',        stars: 289,    img: 'https://nft.fragment.com/gift/icecream.webp' },
+  { name: 'Whip Cupcake',     stars: 286,    img: 'https://nft.fragment.com/gift/whipcupcake.webp' },
+  { name: 'Snake Box',        stars: 276,    img: 'https://nft.fragment.com/gift/snakebox.webp' },
+  { name: 'Instant Ramen',    stars: 273,    img: 'https://nft.fragment.com/gift/instantramen.webp' },
+  { name: 'Lunar Snake',      stars: 267,    img: 'https://nft.fragment.com/gift/lunarsnake.webp' },
+  { name: 'Candy Cane',       stars: 266,    img: 'https://nft.fragment.com/gift/candycane.webp' },
+  { name: 'Vice Cream',       stars: 264,    img: 'https://nft.fragment.com/gift/vicecream.webp' },
+  { name: 'Xmas Stocking',    stars: 264,    img: 'https://nft.fragment.com/gift/xmasstocking.webp' },
+  { name: 'Chill Flame',      stars: 262,    img: 'https://nft.fragment.com/gift/chillflame.webp' },
 ];
 
 export function TopUpModal({ onClose, telegramApi }) {
@@ -194,19 +279,23 @@ export function TopUpModal({ onClose, telegramApi }) {
           <div className="topup-handle" />
           <div className="gifts-header">
             <button className="gifts-back" onClick={() => setGiftsOpen(false)}>← Назад</button>
-            <span className="gifts-title">Список подарков</span>
+            <span className="gifts-title">Принимаемые подарки</span>
           </div>
-          <p className="gifts-sub">Цены актуальны на момент открытия. Отправь подарок @luvscale — баланс зачислят вручную.</p>
-          <div className="gifts-list">
+          <p className="gifts-sub">Отправь подарок @luvscale — баланс зачислят вручную.</p>
+          <div className="gifts-grid">
             {TG_GIFTS.map((g) => (
-              <div key={g.name} className="gift-row">
-                <span className="gift-emoji">{g.emoji}</span>
-                <div className="gift-info">
-                  <div className="gift-name">{g.name}{g.sub ? <span className="gift-sub"> ({g.sub})</span> : null}</div>
+              <div key={g.name} className="gift-card">
+                <div className="gift-card-img-wrap">
+                  <img
+                    src={g.img}
+                    alt={g.name}
+                    className="gift-card-img"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
                 </div>
-                <div className="gift-price">
-                  <StarIcon size={13} />
-                  {g.stars.toLocaleString('ru-RU')}
+                <div className="gift-card-name">{g.name}</div>
+                <div className="gift-card-price">
+                  <StarIcon size={13} /> {g.stars.toLocaleString('ru-RU')}
                 </div>
               </div>
             ))}

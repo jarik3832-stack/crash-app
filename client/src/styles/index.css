@@ -1823,6 +1823,57 @@ button { cursor: pointer; }
   white-space: nowrap;
 }
 
+/* Gifts grid */
+.gifts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+
+.gift-card {
+  background: #1a1d2e;
+  border-radius: 16px;
+  padding: 16px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gift-card-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.gift-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.gift-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gift-card-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #0f1120;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  width: fit-content;
+}
+
 /* Экран подарков (метод Подарки) */
 .gifts-method-screen {
   display: flex;
