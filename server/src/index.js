@@ -10,6 +10,7 @@ import { apiRouter } from './routes/api.js';
 import adminRouter from './routes/admin.js';
 import paymentsRouter from './routes/payments.js';
 import uploadRouter from './routes/upload.js';
+import { giftsRouter } from './routes/gifts.js';
 import { attachSockets } from './sockets/handlers.js';
 import { engine } from './game/engine.js';
 import { startBot } from './bot/index.js';
@@ -39,6 +40,7 @@ app.use('/api', apiRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/gifts', giftsRouter);
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.get('/health', (_req, res) => res.json({ ok: true, phase: engine.phase }));
 
