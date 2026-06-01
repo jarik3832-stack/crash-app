@@ -93,7 +93,6 @@ const TG_GIFTS = [
   { name: 'Santa Hat',        stars: 381, img: giftImg('Santa Hat') },
   { name: 'Victory Medal',    stars: 371, img: giftProxy('victory_medal') },
   { name: 'Party Sparkler',   stars: 363, img: giftImg('Party Sparkler') },
-  { name: 'Mood Pack',        stars: 363, img: giftProxy('mood_pack') },
   { name: 'Easter Egg',       stars: 361, img: giftImg('Easter Egg') },
   { name: 'Fresh Socks',      stars: 357, img: giftImg('Fresh Socks') },
   { name: 'Spiced Wine',      stars: 355, img: giftImg('Spiced Wine') },
