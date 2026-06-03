@@ -1913,6 +1913,9 @@ button { cursor: pointer; }
 .cases-page-new {
   padding: 12px;
   padding-bottom: calc(var(--nav-h) + 12px);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .cases-filters {
@@ -2068,6 +2071,9 @@ button { cursor: pointer; }
 .case-detail-new {
   padding: 12px;
   padding-bottom: calc(var(--nav-h) + 12px);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .case-detail-header-new {

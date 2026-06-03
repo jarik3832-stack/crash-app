@@ -6,6 +6,129 @@ import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import http from 'node:http';
 
+// Список подарков с telegifter.ru
+const GIFT_LIST = [
+  { name: 'Plush Pepe',       stars: 644615 },
+  { name: 'Heart Locket',     stars: 143409 },
+  { name: "Durov's Cap",      stars: 55875  },
+  { name: 'Precious Peach',   stars: 29639  },
+  { name: 'Heroic Helmet',    stars: 20199  },
+  { name: 'Scared Cat',       stars: 17916  },
+  { name: 'Astral Shard',     stars: 15150  },
+  { name: 'Mighty Arm',       stars: 12889  },
+  { name: 'Loot Bag',         stars: 11959  },
+  { name: 'Nail Bracelet',    stars: 11244  },
+  { name: 'Ion Gem',          stars: 7374   },
+  { name: 'Perfume Bottle',   stars: 7308   },
+  { name: 'Mini Oscar',       stars: 7308   },
+  { name: 'Westside Sign',    stars: 7202   },
+  { name: 'Gem Signet',       stars: 6903   },
+  { name: 'Artisan Brick',    stars: 6491   },
+  { name: 'Magic Potion',     stars: 6112   },
+  { name: 'Kissed Frog',      stars: 4637   },
+  { name: 'Swiss Watch',      stars: 4517   },
+  { name: 'Sharp Tongue',     stars: 4452   },
+  { name: 'Genie Lamp',       stars: 4287   },
+  { name: 'Bonded Ring',      stars: 3982   },
+  { name: 'Neko Helmet',      stars: 3877   },
+  { name: 'Toy Bear',         stars: 3842   },
+  { name: 'Vintage Cigar',    stars: 3202   },
+  { name: 'Signet Ring',      stars: 3173   },
+  { name: 'Voodoo Doll',      stars: 2972   },
+  { name: 'Electric Skull',   stars: 2816   },
+  { name: 'Diamond Ring',     stars: 2509   },
+  { name: 'Eternal Rose',     stars: 2376   },
+  { name: 'Bling Binky',      stars: 2324   },
+  { name: 'Rare Bird',        stars: 2293   },
+  { name: "Khabib's Papakha", stars: 2245   },
+  { name: 'Cupid Charm',      stars: 1857   },
+  { name: 'Sky Stilettos',    stars: 1593   },
+  { name: 'Ionic Dryer',      stars: 1404   },
+  { name: 'Love Potion',      stars: 1395   },
+  { name: 'UFC Strike',       stars: 1339   },
+  { name: 'Mad Pumpkin',      stars: 1142   },
+  { name: 'Trapped Heart',    stars: 1136   },
+  { name: 'Skull Flower',     stars: 1047   },
+  { name: 'Flying Broom',     stars: 1041   },
+  { name: 'Snoop Cigar',      stars: 1032   },
+  { name: 'Record Player',    stars: 1008   },
+  { name: 'Love Candle',      stars: 940    },
+  { name: 'Crystal Ball',     stars: 917    },
+  { name: 'Valentine Box',    stars: 882    },
+  { name: 'Sakura Flower',    stars: 878    },
+  { name: 'Top Hat',          stars: 856    },
+  { name: 'Berry Box',        stars: 793    },
+  { name: 'Jolly Chimp',      stars: 708    },
+  { name: 'Hanging Star',     stars: 702    },
+  { name: 'Bunny Muffin',     stars: 699    },
+  { name: 'Jelly Bunny',      stars: 675    },
+  { name: 'Jingle Bells',     stars: 668    },
+  { name: 'Joyful Bundle',    stars: 665    },
+  { name: 'Sleigh Bell',      stars: 663    },
+  { name: 'Evil Eye',         stars: 650    },
+  { name: 'Light Sword',      stars: 619    },
+  { name: 'Eternal Candle',   stars: 544    },
+  { name: 'Lush Bouquet',     stars: 515    },
+  { name: 'Moon Pendant',     stars: 510    },
+  { name: 'Snoop Dogg',       stars: 499    },
+  { name: 'Spy Agaric',       stars: 499    },
+  { name: 'Input Key',        stars: 492    },
+  { name: 'Desk Calendar',    stars: 492    },
+  { name: 'Faith Amulet',     stars: 490    },
+  { name: 'Homemade Cake',    stars: 489    },
+  { name: 'Bow Tie',          stars: 473    },
+  { name: 'Spring Basket',    stars: 460    },
+  { name: 'Clover Pin',       stars: 457    },
+  { name: 'Witch Hat',        stars: 455    },
+  { name: 'Restless Jar',     stars: 447    },
+  { name: 'Swag Bag',         stars: 447    },
+  { name: 'Stellar Rocket',   stars: 433    },
+  { name: 'Snow Globe',       stars: 419    },
+  { name: 'Snow Mittens',     stars: 414    },
+  { name: 'Timeless Book',    stars: 413    },
+  { name: 'Star Notepad',     stars: 413    },
+  { name: 'B-Day Candle',     stars: 407    },
+  { name: 'Money Pot',        stars: 388    },
+  { name: 'Hex Pot',          stars: 385    },
+  { name: 'Cookie Heart',     stars: 385    },
+  { name: 'Santa Hat',        stars: 381    },
+  { name: 'Mousse Cake',      stars: 378    },
+  { name: 'Victory Medal',    stars: 371    },
+  { name: 'Party Sparkler',   stars: 363    },
+  { name: 'Easter Egg',       stars: 361    },
+  { name: 'Fresh Socks',      stars: 357    },
+  { name: 'Spiced Wine',      stars: 355    },
+  { name: 'Pretty Posy',      stars: 355    },
+  { name: 'Ginger Cookie',    stars: 336    },
+  { name: 'Happy Brownie',    stars: 333    },
+  { name: 'Tama Gadget',      stars: 332    },
+  { name: 'Jack in the Box',  stars: 330    },
+  { name: 'Hypno Lollipop',   stars: 330    },
+  { name: 'Jester Hat',       stars: 321    },
+  { name: 'Lol Pop',          stars: 310    },
+  { name: 'Pet Snake',        stars: 317    },
+  { name: 'Winter Wreath',    stars: 312    },
+  { name: 'Pool Float',       stars: 311    },
+  { name: 'Holiday Drink',    stars: 295    },
+  { name: 'Big Year',         stars: 292    },
+  { name: 'Ice Cream',        stars: 289    },
+  { name: 'Whip Cupcake',     stars: 286    },
+  { name: 'Snake Box',        stars: 276    },
+  { name: 'Instant Ramen',    stars: 273    },
+  { name: 'Lunar Snake',      stars: 267    },
+  { name: 'Candy Cane',       stars: 266    },
+  { name: 'Low Rider',        stars: 4969   },
+].map(g => ({ ...g, img: `https://telegifter.ru/wp-content/themes/gifts/assets/img/gifts/noupdate/${encodeURIComponent(g.name)}.webp` }));
+
+// callback_data ограничен 64 байтами — кодируем имя через индекс
+function encodeGiftName(name) {
+  const idx = GIFT_LIST.findIndex(g => g.name === name);
+  return idx >= 0 ? String(idx) : '0';
+}
+function decodeGiftByIndex(idx) {
+  return GIFT_LIST[parseInt(idx)] || GIFT_LIST[0];
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || join(__dirname, '../../data');
 const UPLOADS_DIR = join(DATA_DIR, 'uploads');
@@ -213,30 +336,125 @@ export function startBot(token) {
         bot.answerCallbackQuery(query.id);
       }
 
-      // Добавить предмет в кейс
+      // Добавить предмет в кейс — показываем список подарков постранично
       else if (data.startsWith('case_additem_')) {
         const caseId = parseInt(data.replace('case_additem_', ''));
+        userStates.set(userId, { action: 'adding_item', caseId });
 
         await bot.editMessageText(
           `🎁 *Добавление предмета в кейс #${caseId}*\n\n` +
-          'Отправьте данные в формате:\n' +
-          '```\n' +
-          'Название: Алмаз\n' +
-          'Сумма: 500\n' +
-          'Шанс: 10\n' +
-          'Редкость: rare\n' +
-          '```\n\n' +
-          'После этого отправьте изображение предмета.',
+          'Выберите способ добавления:',
           {
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'Markdown',
             reply_markup: {
-              inline_keyboard: [[{ text: '🔙 Назад', callback_data: `case_edit_${caseId}` }]],
+              inline_keyboard: [
+                [{ text: '🎁 Выбрать подарок из списка', callback_data: `gift_pick_${caseId}_0` }],
+                [{ text: '✏️ Ввести данные вручную', callback_data: `item_manual_${caseId}` }],
+                [{ text: '🔙 Назад', callback_data: `case_edit_${caseId}` }],
+              ],
             },
           }
         );
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Ручной ввод предмета
+      else if (data.startsWith('item_manual_')) {
+        const caseId = parseInt(data.replace('item_manual_', ''));
         userStates.set(userId, { action: 'adding_item', caseId });
+
+        await bot.sendMessage(
+          chatId,
+          `✏️ *Ручное добавление предмета в кейс #${caseId}*\n\n` +
+          'Отправьте данные:\n' +
+          '```\n' +
+          'Название: Алмаз\n' +
+          'Сумма: 500\n' +
+          'Шанс: 10\n' +
+          'Редкость: rare\n' +
+          '```\n\nПосле этого отправьте фото предмета.',
+          { parse_mode: 'Markdown' }
+        );
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Выбор подарка из списка (постранично по 8)
+      else if (data.startsWith('gift_pick_')) {
+        const parts = data.split('_');
+        const caseId = parseInt(parts[2]);
+        const page = parseInt(parts[3]) || 0;
+        const PAGE_SIZE = 8;
+
+        const gifts = GIFT_LIST.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+        const totalPages = Math.ceil(GIFT_LIST.length / PAGE_SIZE);
+
+        const buttons = gifts.map((g, i) => ([{
+          text: `${g.name} (${g.stars}⭐)`,
+          callback_data: `gift_sel_${caseId}_${page * PAGE_SIZE + i}`,
+        }]));
+
+        const navRow = [];
+        if (page > 0) navRow.push({ text: '◀️', callback_data: `gift_pick_${caseId}_${page - 1}` });
+        navRow.push({ text: `${page + 1}/${totalPages}`, callback_data: 'noop' });
+        if (page < totalPages - 1) navRow.push({ text: '▶️', callback_data: `gift_pick_${caseId}_${page + 1}` });
+
+        buttons.push(navRow);
+        buttons.push([{ text: '🔙 Назад', callback_data: `case_additem_${caseId}` }]);
+
+        await bot.editMessageText(
+          `🎁 *Выберите подарок для кейса #${caseId}*\n_(страница ${page + 1} из ${totalPages})_`,
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: { inline_keyboard: buttons },
+          }
+        );
+        bot.answerCallbackQuery(query.id);
+      }
+
+      // Подарок выбран — показываем его с фото и просим ввести данные
+      else if (data.startsWith('gift_sel_')) {
+        const parts = data.split('_');
+        const caseId = parseInt(parts[2]);
+        const giftIdx = parseInt(parts[3]);
+        const gift = decodeGiftByIndex(giftIdx);
+
+        if (!gift) return bot.answerCallbackQuery(query.id, { text: '❌ Подарок не найден' });
+
+        userStates.set(userId, {
+          action: 'adding_gift_item',
+          caseId,
+          giftName: gift.name,
+          giftImg: gift.img,
+        });
+
+        const imgUrl = `https://telegifter.ru/wp-content/themes/gifts/assets/img/gifts/noupdate/${encodeURIComponent(gift.name)}.webp`;
+
+        try {
+          await bot.sendPhoto(chatId, imgUrl, {
+            caption:
+              `✅ Выбран подарок: *${gift.name}*\n\n` +
+              'Теперь отправьте:\n' +
+              '```\n' +
+              `Сумма: ${gift.stars}\n` +
+              'Шанс: 10\n' +
+              'Редкость: rare\n' +
+              '```\n_(можешь изменить значения)_',
+            parse_mode: 'Markdown',
+          });
+        } catch {
+          await bot.sendMessage(chatId,
+            `✅ Выбран: *${gift.name}*\n\nОтправьте:\n\`\`\`\nСумма: ${gift.stars}\nШанс: 10\nРедкость: rare\n\`\`\``,
+            { parse_mode: 'Markdown' }
+          );
+        }
+        bot.answerCallbackQuery(query.id);
+      }
+
+      else if (data === 'noop') {
         bot.answerCallbackQuery(query.id);
       }
 
@@ -513,7 +731,7 @@ export function startBot(token) {
         bot.sendMessage(chatId, '✅ Данные приняты! Теперь отправьте изображение кейса.');
       }
 
-      // Добавление предмета
+      // Добавление предмета вручную
       else if (state.action === 'adding_item') {
         const nameMatch = text.match(/Название:\s*(.+)/i);
         const amountMatch = text.match(/Сумма:\s*(\d+)/i);
@@ -539,6 +757,35 @@ export function startBot(token) {
         });
 
         bot.sendMessage(chatId, '✅ Данные приняты! Теперь отправьте изображение предмета.');
+      }
+
+      // Добавление подарка — ввод суммы/шанса
+      else if (state.action === 'adding_gift_item') {
+        const amountMatch = text.match(/Сумма:\s*(\d+)/i);
+        const chanceMatch = text.match(/Шанс:\s*([\d.]+)/i);
+        const rarityMatch = text.match(/Редкость:\s*(\w+)/i);
+
+        if (!amountMatch || !chanceMatch) {
+          return bot.sendMessage(chatId, '❌ Нужно указать Сумму и Шанс.');
+        }
+
+        const amount = parseInt(amountMatch[1]);
+        const chance = parseFloat(chanceMatch[1]);
+        const rarity = rarityMatch ? rarityMatch[1].toLowerCase() : 'rare';
+
+        // Сохраняем с картинкой с telegifter.ru
+        db.prepare(`
+          INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
+          VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
+        `).run(state.caseId, state.giftName, amount, chance, rarity, state.giftImg);
+
+        userStates.delete(userId);
+        bot.sendMessage(
+          chatId,
+          `✅ Подарок *${state.giftName}* добавлен в кейс!\n\n` +
+          `Сумма: ${amount}⭐ | Шанс: ${chance}% | Редкость: ${rarity}`,
+          { parse_mode: 'Markdown' }
+        );
       }
 
       // Настройка минимального крэша
