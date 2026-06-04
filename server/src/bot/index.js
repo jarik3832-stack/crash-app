@@ -415,7 +415,7 @@ export function startBot(token) {
         bot.answerCallbackQuery(query.id);
       }
 
-      // Подарок выбран — показываем его с фото и просим ввести данные
+      // Подарок выбран — просим ввести данные, затем фото
       else if (data.startsWith('gift_sel_')) {
         const parts = data.split('_');
         const caseId = parseInt(parts[2]);
@@ -425,7 +425,7 @@ export function startBot(token) {
         if (!gift) return bot.answerCallbackQuery(query.id, { text: '❌ Подарок не найден' });
 
         userStates.set(userId, {
-          action: 'adding_gift_item',
+          action: 'adding_gift_item_text',
           caseId,
           giftName: gift.name,
           giftImg: gift.img,
@@ -436,18 +436,13 @@ export function startBot(token) {
         try {
           await bot.sendPhoto(chatId, imgUrl, {
             caption:
-              `✅ Выбран подарок: *${gift.name}*\n\n` +
-              'Теперь отправьте:\n' +
-              '```\n' +
-              `Сумма: ${gift.stars}\n` +
-              'Шанс: 10\n' +
-              'Редкость: rare\n' +
-              '```\n_(можешь изменить значения)_',
+              `✅ Выбран: *${gift.name}*\n\n` +
+              'Отправьте данные:\n```\nСумма: 500\nШанс: 10\nРедкость: rare\n```\n\nЗатем отправьте *фото* или напишите "пропустить" для фото по умолчанию',
             parse_mode: 'Markdown',
           });
         } catch {
           await bot.sendMessage(chatId,
-            `✅ Выбран: *${gift.name}*\n\nОтправьте:\n\`\`\`\nСумма: ${gift.stars}\nШанс: 10\nРедкость: rare\n\`\`\``,
+            `✅ Выбран: *${gift.name}*\n\nОтправьте:\`\`\`\nСумма: 500\nШанс: 10\nРедкость: rare\n\`\`\`\n\nЗатем фото или "пропустить"`,
             { parse_mode: 'Markdown' }
           );
         }
@@ -759,8 +754,8 @@ export function startBot(token) {
         bot.sendMessage(chatId, '✅ Данные приняты! Теперь отправьте изображение предмета.');
       }
 
-      // Добавление подарка — ввод суммы/шанса
-      else if (state.action === 'adding_gift_item') {
+      // Добавление подарка — ввод суммы/шанса, затем ждём фото
+      else if (state.action === 'adding_gift_item_text') {
         const amountMatch = text.match(/Сумма:\s*(\d+)/i);
         const chanceMatch = text.match(/Шанс:\s*([\d.]+)/i);
         const rarityMatch = text.match(/Редкость:\s*(\w+)/i);
@@ -773,19 +768,38 @@ export function startBot(token) {
         const chance = parseFloat(chanceMatch[1]);
         const rarity = rarityMatch ? rarityMatch[1].toLowerCase() : 'rare';
 
-        // Сохраняем с картинкой с telegifter.ru
-        db.prepare(`
-          INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
-          VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
-        `).run(state.caseId, state.giftName, amount, chance, rarity, state.giftImg);
+        // Переходим в ожидание фото
+        userStates.set(userId, {
+          action: 'adding_gift_item_image',
+          caseId: state.caseId,
+          giftName: state.giftName,
+          giftImg: state.giftImg,
+          amount,
+          chance,
+          rarity,
+        });
 
-        userStates.delete(userId);
-        bot.sendMessage(
-          chatId,
-          `✅ Подарок *${state.giftName}* добавлен в кейс!\n\n` +
-          `Сумма: ${amount}⭐ | Шанс: ${chance}% | Редкость: ${rarity}`,
-          { parse_mode: 'Markdown' }
-        );
+        bot.sendMessage(chatId, '✅ Данные приняты! Отправьте фото подарка или напишите "пропустить" для фото по умолчанию.');
+      }
+
+      // Если пользователь написал "пропустить" — используем фото по умолчанию
+      else if (state.action === 'adding_gift_item_image') {
+        const useDefault = text.toLowerCase().includes('пропустить') || text.toLowerCase().includes('скип') || text.toLowerCase() === 'нет';
+
+        if (useDefault) {
+          db.prepare(`
+            INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
+            VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
+          `).run(state.caseId, state.giftName, state.amount, state.chance, state.rarity, state.giftImg);
+
+          userStates.delete(userId);
+          bot.sendMessage(chatId,
+            `✅ *${state.giftName}* добавлен в кейс!\nСумма: ${state.amount}⭐ | Шанс: ${state.chance}% | Редкость: ${state.rarity}`,
+            { parse_mode: 'Markdown' }
+          );
+        } else {
+          bot.sendMessage(chatId, '❓ Не понял. Отправь фото подарка или напиши "пропустить"');
+        }
       }
 
       // Настройка минимального крэша
@@ -900,6 +914,23 @@ export function startBot(token) {
           `Сумма: ${state.amount}⭐\n` +
           `Шанс: ${state.chance}%\n` +
           `Редкость: ${state.rarity}`
+        );
+      }
+
+      // Фото для выбранного из списка подарка
+      else if (state.action === 'adding_gift_item_image') {
+        db.prepare(`
+          INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
+          VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
+        `).run(state.caseId, state.giftName, state.amount, state.chance, state.rarity, imageUrl);
+
+        userStates.delete(userId);
+
+        bot.sendMessage(
+          chatId,
+          `✅ *${state.giftName}* добавлен в кейс!\n` +
+          `Сумма: ${state.amount}⭐ | Шанс: ${state.chance}% | Редкость: ${state.rarity}`,
+          { parse_mode: 'Markdown' }
         );
       }
     } catch (err) {

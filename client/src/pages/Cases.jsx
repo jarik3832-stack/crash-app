@@ -234,6 +234,7 @@ function CaseDetailNew({ c, user, opening, error, onOpen, onBack }) {
                 <img src={it.image_url} alt={it.label_ru} className="case-item-image" />
               )}
             </div>
+            <div className="case-item-name-horizontal">{it.label_ru}</div>
             <div className="case-item-price-horizontal">
               {it.amount.toLocaleString('ru-RU')} <StarIcon size={14} />
             </div>
@@ -279,6 +280,7 @@ function CaseDetailNew({ c, user, opening, error, onOpen, onBack }) {
                 <img src={it.image_url} alt={it.label_ru} className="case-item-image" />
               )}
             </div>
+            <div className="case-item-name-small">{it.label_ru}</div>
             <div className="case-item-price-small">
               {it.amount.toLocaleString('ru-RU')} <StarIcon size={12} />
             </div>
