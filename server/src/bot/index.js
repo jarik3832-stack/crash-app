@@ -788,8 +788,8 @@ export function startBot(token) {
 
         if (useDefault) {
           db.prepare(`
-            INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
-            VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
+            INSERT INTO case_items (case_id, label_ru, amount, weight, rarity, image_url, reward_kind, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, 'coins', 0)
           `).run(state.caseId, state.giftName, state.amount, state.chance, state.rarity, state.giftImg);
 
           userStates.delete(userId);
@@ -902,8 +902,8 @@ export function startBot(token) {
       // Завершение добавления предмета
       else if (state.action === 'adding_item_waiting_image') {
         db.prepare(`
-          INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
-          VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
+          INSERT INTO case_items (case_id, label_ru, amount, weight, rarity, image_url, reward_kind, sort_order)
+          VALUES (?, ?, ?, ?, ?, ?, 'coins', 0)
         `).run(state.caseId, state.name, state.amount, state.chance, state.rarity, imageUrl);
 
         userStates.delete(userId);
@@ -920,8 +920,8 @@ export function startBot(token) {
       // Фото для выбранного из списка подарка
       else if (state.action === 'adding_gift_item_image') {
         db.prepare(`
-          INSERT INTO case_items (case_id, label_ru, amount, weight, chance, rarity, image_url, reward_kind, sort_order)
-          VALUES (?, ?, ?, 100, ?, ?, ?, 'coins', 0)
+          INSERT INTO case_items (case_id, label_ru, amount, weight, rarity, image_url, reward_kind, sort_order)
+          VALUES (?, ?, ?, ?, ?, ?, 'coins', 0)
         `).run(state.caseId, state.giftName, state.amount, state.chance, state.rarity, imageUrl);
 
         userStates.delete(userId);

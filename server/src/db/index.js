@@ -79,6 +79,7 @@ function runMigrations() {
   const itemAdds = [
     ['image_url', 'TEXT'],
     ['rarity', "TEXT NOT NULL DEFAULT 'common'"],
+    ['chance', 'REAL NOT NULL DEFAULT 10'],
   ];
   for (const [name, def] of itemAdds) {
     if (!itemsCols.has(name)) db.exec(`ALTER TABLE case_items ADD COLUMN ${name} ${def}`);
