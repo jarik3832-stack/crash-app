@@ -213,13 +213,7 @@ function CaseDetailNew({ c, user, opening, error, onOpen, onBack }) {
         <button className="case-back-btn" onClick={onBack}>← Назад</button>
       </div>
 
-      <div className="case-hero-detail">
-        {c.image_url && (
-          <img src={c.image_url} alt={c.name_ru} className="case-hero-image" />
-        )}
-        <h1 className="case-hero-title">{c.name_ru}</h1>
-        {c.rarity === 'limited' && <div className="case-badge-limited-large">LIMITED</div>}
-      </div>
+      {/* Герой-блок убран (изображение кейса не показываем) */}
 
       <div className="case-items-scroll-horizontal" ref={scrollRef}>
         {c.items.map((it) => (

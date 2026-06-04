@@ -2250,7 +2250,7 @@ button { cursor: pointer; }
 /* ============ Horizontal scrolling items ============ */
 .case-items-scroll-horizontal {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 16px 0;
@@ -2266,16 +2266,17 @@ button { cursor: pointer; }
 
 .case-item-card-horizontal {
   position: relative;
-  min-width: 150px;
+  min-width: 110px;
+  max-width: 110px;
   flex-shrink: 0;
   background: #12162a;
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  padding: 16px 12px 12px;
+  border-radius: 14px;
+  padding: 10px 8px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .item-badge-corner {
@@ -2305,31 +2306,36 @@ button { cursor: pointer; }
 }
 
 .case-item-image-wrap-horizontal {
-  width: 100%;
-  aspect-ratio: 1;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent !important;
+  flex-shrink: 0;
 }
 
 .case-item-name-horizontal {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text);
   text-align: center;
-  line-height: 1.3;
-  min-height: 30px;
+  line-height: 1.2;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .case-item-price-horizontal {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 14px;
+  gap: 3px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--accent);
 }
@@ -2401,12 +2407,21 @@ button { cursor: pointer; }
 }
 
 .case-item-image-wrap-small {
-  width: 100%;
-  aspect-ratio: 1;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent !important;
+  flex-shrink: 0;
+}
+
+.case-item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent !important;
+  mix-blend-mode: normal;
 }
 
 .case-item-price-small {
