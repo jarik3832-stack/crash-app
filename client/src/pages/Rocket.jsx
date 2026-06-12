@@ -46,7 +46,6 @@ export function Rocket({ user, onBalanceChange, telegramApi }) {
     <div className="rocket-page">
       <AppHeader
         user={user}
-        title="Ракета"
         showToggles
         settings={settings}
         onSettings={changeSettings}

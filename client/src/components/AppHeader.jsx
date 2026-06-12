@@ -1,83 +1,53 @@
-import { useEffect, useState } from 'react';
-import { api } from '../api/http.js';
-import { t } from '../i18n/ru.js';
-import {
-  CloseIcon, StarIcon, ChevronDownIcon, MoreIcon, TrophyIcon,
-} from './icons.jsx';
-import { LeaderboardModal } from './LeaderboardModal.jsx';
+import { useState } from 'react';
 import { TopUpModal } from './TopUpModal.jsx';
 
-export function AppHeader({ user, title, showToggles, settings, onSettings, telegramApi, showTopUp = true }) {
-  const [lbOpen, setLbOpen] = useState(false);
+function ButterflyIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 12C9 9 4 5 4 9c0 3 3 4 8 3z" fill="#c084fc" stroke="#c084fc" strokeWidth="0.5"/>
+      <path d="M12 12C15 9 20 5 20 9c0 3-3 4-8 3z" fill="#a855f7" stroke="#a855f7" strokeWidth="0.5"/>
+      <path d="M12 12C9 15 4 19 4 15c0-3 3-4 8-3z" fill="#a855f7" stroke="#a855f7" strokeWidth="0.5"/>
+      <path d="M12 12C15 15 20 19 20 15c0-3-3-4-8-3z" fill="#c084fc" stroke="#c084fc" strokeWidth="0.5"/>
+      <ellipse cx="12" cy="12" rx="1.2" ry="2" fill="#1a0a2e"/>
+    </svg>
+  );
+}
+
+function TONIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <polygon points="12,2 22,7 22,17 12,22 2,17 2,7" fill="#0098EA"/>
+      <path d="M8 10l4-5 4 5H8z" fill="white"/>
+      <line x1="12" y1="5" x2="12" y2="18" stroke="white" strokeWidth="2.5"/>
+    </svg>
+  );
+}
+
+export function AppHeader({ user, showToggles, settings, onSettings, telegramApi, showTopUp = true }) {
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [rank, setRank] = useState(null);
-
-  useEffect(() => {
-    let cancel = false;
-    api.leaderboard('all')
-      .then((r) => { if (!cancel) setRank(r.me?.rank ?? null); })
-      .catch(() => {});
-    return () => { cancel = true; };
-  }, [user?.balance]);
-
-  function closeApp() {
-    if (telegramApi?.close) telegramApi.close();
-    else window.history.back();
-  }
 
   return (
-    <header className="app-header">
-      <div className="app-header-row">
-        <button className="header-close" onClick={closeApp}>
-          <CloseIcon size={12} /> {t.app.close}
-        </button>
-        <div className="header-center">
+    <header className="chance-header">
+      <div className="chance-header-logo">
+        <ButterflyIcon />
+        <span className="chance-logo-text">Chance</span>
+      </div>
+
+      <div className="chance-header-balances">
+        <div className="chance-balance-chip butterfly-chip">
+          <ButterflyIcon />
+          <span>{(user?.gems ?? 0).toLocaleString('ru-RU')}</span>
         </div>
-        {showTopUp && (
-          <button className="balance-topup-chip" onClick={() => setTopUpOpen(true)}>
-            <StarIcon size={15} />
-            <span className="balance-topup-value">{(user?.balance ?? 0).toLocaleString('ru-RU')}</span>
-            <span className="balance-topup-plus">+</span>
-          </button>
-        )}
-        <button className="header-chevron" aria-label="dropdown">
-          <ChevronDownIcon size={14} />
-        </button>
-        <button className="header-more" aria-label="more">
-          <MoreIcon size={16} />
+        <button
+          className="chance-balance-chip ton-chip"
+          onClick={showTopUp ? () => setTopUpOpen(true) : undefined}
+        >
+          <TONIcon />
+          <span>{(user?.balance ?? 0).toLocaleString('ru-RU')}</span>
+          {showTopUp && <span className="chance-plus-btn">+</span>}
         </button>
       </div>
 
-      <div className="header-extras">
-        <button className="top-wins-btn" onClick={() => setLbOpen(true)}>
-          <TrophyIcon size={14} />
-          <span className={`rank-badge ${rank ? '' : 'empty'}`}>
-            {rank ? rank : '—'}
-          </span>
-          <span className="top-wins-label-sub">{t.header.topWins}</span>
-        </button>
-
-        {showToggles && (
-          <>
-            <button
-              className={`toggle-pill ${settings.insurance ? 'on' : ''}`}
-              onClick={() => onSettings({ insurance: !settings.insurance })}
-            >
-              {t.header.insurance}
-              <span className="switch" />
-            </button>
-            <button
-              className={`toggle-pill ${settings.demo ? 'on' : ''}`}
-              onClick={() => onSettings({ demo: !settings.demo })}
-            >
-              {t.header.demo}
-              <span className="switch" />
-            </button>
-          </>
-        )}
-      </div>
-
-      {lbOpen && <LeaderboardModal onClose={() => setLbOpen(false)} user={user} />}
       {topUpOpen && <TopUpModal onClose={() => setTopUpOpen(false)} telegramApi={telegramApi} />}
     </header>
   );

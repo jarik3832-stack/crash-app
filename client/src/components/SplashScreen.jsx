@@ -41,15 +41,15 @@ export function SplashScreen({ message = 'Запуск...' }) {
       const h = window.innerHeight;
 
       const bg = ctx.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, '#0a0d1f');
-      bg.addColorStop(0.5, '#0d1330');
-      bg.addColorStop(1, '#06081a');
+      bg.addColorStop(0, '#0d0818');
+      bg.addColorStop(0.5, '#130d24');
+      bg.addColorStop(1, '#09051a');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
 
-      // лёгкое тёплое свечение снизу — будто горизонт
-      const glow = ctx.createRadialGradient(w / 2, h * 1.1, 30, w / 2, h * 1.1, h * 0.9);
-      glow.addColorStop(0, 'rgba(255,140,60,0.18)');
+      // purple glow from center
+      const glow = ctx.createRadialGradient(w / 2, h * 0.35, 20, w / 2, h * 0.35, h * 0.7);
+      glow.addColorStop(0, 'rgba(120,40,200,0.35)');
       glow.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, w, h);

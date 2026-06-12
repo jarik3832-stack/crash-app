@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { api, setToken } from './api/http.js';
 import { useTelegram, devUserFromUrl } from './hooks/useTelegram.js';
 import { t } from './i18n/ru.js';
+import { Home } from './pages/Home.jsx';
 import { Rocket } from './pages/Rocket.jsx';
 import { Cases } from './pages/Cases.jsx';
 import { Profile } from './pages/Profile.jsx';
@@ -12,6 +13,7 @@ import { Slots } from './pages/Slots.jsx';
 import { Admin } from './pages/Admin.jsx';
 import { BottomNav } from './components/BottomNav.jsx';
 import { SplashScreen } from './components/SplashScreen.jsx';
+import { ComingSoon } from './components/ComingSoon.jsx';
 
 export function App() {
   const { tg, ready, initData } = useTelegram();
@@ -64,13 +66,15 @@ export function App() {
   return (
     <div className="app">
       <Routes>
-        <Route path="/" element={<Rocket {...pageProps} />} />
+        <Route path="/" element={<Home {...pageProps} />} />
+        <Route path="/rocket" element={<Rocket {...pageProps} />} />
         <Route path="/cases" element={<Cases {...pageProps} />} />
         <Route path="/profile" element={<Profile {...pageProps} />} />
         <Route path="/admin" element={<Admin {...pageProps} />} />
-        <Route path="/pvp" element={<PvP />} />
+        <Route path="/pvp" element={<PvP {...pageProps} />} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/slots" element={<Slots />} />
+        <Route path="/leaderboard" element={<ComingSoon emoji="🏆" title="Лидеры" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />
