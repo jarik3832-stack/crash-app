@@ -1,14 +1,1510 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#0d1117" />
-    <title>Crash</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>CRASH TMA — Ракета</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: #0A0C14; font-family: 'Inter', -apple-system, system-ui, sans-serif; overflow: hidden; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; }
+        .app-wrapper { display: flex; flex-direction: column; height: 100vh; width: 100%; background: #0A0C14; overflow: hidden; padding-bottom: env(safe-area-inset-bottom, 12px); }
+        .main-content { flex: 1; padding: 12px 14px 8px 14px; overflow-y: auto; overflow-x: hidden; }
+        .bottom-nav { background: #0F111AE0; backdrop-filter: blur(24px); border-top: 1px solid #2A2E3C; display: flex; justify-content: space-around; align-items: center; padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px)); border-radius: 28px 28px 0 0; margin-top: 6px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #C8D1E8; transition: 0.2s; cursor: pointer; padding: 6px 16px; border-radius: 40px; background: transparent; }
+        .nav-item.active { background: #FF9040; color: #0A0C14; box-shadow: 0 4px 12px rgba(255, 144, 64, 0.3); }
+        .nav-icon { font-size: 22px; }
+        .page { display: none; animation: fade 0.2s ease; }
+        .page.active-page { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+
+        /* ===== CRASH GAME STYLES ===== */
+        .game-container { width: 100%; background: #0F111A; border-radius: 38px; padding: 12px; border: 1px solid #2A2E3C; }
+        .balance-panel { background: #0A0C14; border-radius: 60px; padding: 8px 18px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .balance-label { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: #C8D1E8; }
+        .balance-value { font-size: 24px; font-weight: 800; font-family: monospace; color: #FFE9B6; background: #0F11A; padding: 4px 18px; border-radius: 40px; }
+        .history-strip { background: #151A24; border-radius: 60px; padding: 8px 12px; margin-bottom: 16px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; }
+        .history-chip { background: #1A202E; padding: 4px 14px; border-radius: 40px; font-weight: 800; font-size: 16px; font-family: monospace; color: #FFAD7A; white-space: nowrap; }
+        .rocket-stage { background: #01020A; border-radius: 28px; padding: 8px; margin-bottom: 16px; position: relative; border: 1px solid #2F34; }
+        canvas { display: block; width: 100%; background: radial-gradient(circle at 30% 20%, #0B1025, #000); border-radius: 24px; aspect-ratio: 500 / 280; }
+        .multiplier-badge { position: absolute; top: 12px; right: 16px; background: #00AA; backdrop-filter: blur(16px); padding: 4px 18px; border-radius: 60px; font-size: 32px; font-weight: 800; font-family: monospace; color: #FFE9B6; text-shadow: 0 0 10px #FFAA33; border: 1px solid #FFAA55; z-index: 20; }
+        .payout-panel { display: flex; gap: 12px; margin-bottom: 16px; }
+        .card { background: #161C2A; flex: 1; border-radius: 40px; padding: 10px 0; text-align: center; }
+        .card .label { color: #9AA6C4; font-size: 13px; font-weight: 50; margin-bottom: 4px; }
+        .card .value { color: #FFE9B6; font-size: 20px; font-weight: 800; font-family: monospace; }
+        .auto-input { background: #0C101C; border: 1px solid #FFAA55; border-radius: 40px; width: 100px; padding: 6px 0; text-align: center; font-size: 20px; font-weight: bold; color: #FFE0A3; font-family: monospace; margin-top: 6px; }
+        .bet-zone { background: #121724; border-radius: 60px; padding: 6px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .mode-group { background: #0C101C; border-radius: 50px; display: flex; gap: 4px; padding: 4px 12px; }
+        .mode-btn { padding: 6px 20px; border-radius: 40px; font-weight: 700; cursor: pointer; color: #C8D1E8; font-size: 14px; }
+        .mode-active { background: #FF9040; color: #0A0C14; }
+        .bet-control { display: flex; align-items: center; gap: 8px; background: #0C101C; padding: 4px 16px; border-radius: 50px; }
+        .bet-control input { background: transparent; border: none; font-size: 22px; font-weight: bold; width: 80px; text-align: center; color: #FFE9B6; font-family: monospace; }
+        .max-btn { background: #FF9040; border: none; padding: 4px 14px; border-radius: 50px; font-weight: bold; cursor: pointer; color: #0A0C14; }
+        .bet-action, .cashout-action { width: 100%; border: none; padding: 14px; border-radius: 60px; font-size: 20px; font-weight: 800; color: white; cursor: pointer; margin-bottom: 10px; }
+        .bet-action { background: #2D3142; color: #E8EDFF; }
+        .cashout-action { background: #1F6E42; color: #FFFFFF; }
+        .cashout-action:disabled { opacity: 0.4; }
+        .status-text { text-align: center; margin-top: 12px; font-weight: bold; color: #FFC57A; font-size: 13px; }
+        .timer-bar { margin-top: 8px; height: 4px; background: #262C3A; border-radius: 5px; }
+        .timer-fill { width: 0%; height: 4px; background: #FF9040; border-radius: 5px; }
+        .profile-card { background: #0F111A; border-radius: 48px; padding: 24px 20px; text-align: center; border: 1px solid #2A2E3C; margin-top: 16px; }
+        .avatar { background: #FF9040; width: 80px; height: 80px; border-radius: 80px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 44px; font-weight: bold; color: #0A0C14; }
+        .tg-name { font-size: 20px; font-weight: bold; color: #FFE9B6; margin-bottom: 12px; }
+        .stat-row { display: flex; justify-content: space-between; background: #0C101C; padding: 12px 24px; border-radius: 60px; margin-top: 12px; }
+        .stat-label { color: #9AA6C4; font-weight: 50; }
+        .stat-row span:last-child { color: #FFE9B6; font-weight: 700; font-family: monospace; font-size: 18px; }
+        .reset-stats { margin-top: 24px; background: #2D3142; border: none; padding: 12px; border-radius: 60px; font-weight: bold; color: #E8EDFF; width: 100%; cursor: pointer; }
+
+        /* ===== MINER GAME STYLES ===== */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        .miner-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #0a0a1a;
+            border-radius: 38px;
+            overflow: hidden;
+            border: 1px solid #2A2E3C;
+        }
+        
+        .miner-header {
+            width: 100%;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a2e;
+            border-bottom: 2px solid #2A2E3C;
+            min-height: 50px;
+        }
+        
+        .miner-hp-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .miner-hp-icon {
+            width: 16px;
+            height: 16px;
+            image-rendering: pixelated;
+        }
+        
+        .miner-hp-bar-bg {
+            width: 90px;
+            height: 12px;
+            background: #2a2a4a;
+            border: 2px solid #4a4a6a;
+        }
+        
+        .miner-hp-bar {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s, background 0.3s;
+        }
+        
+        .miner-hp-bar.low { background: #f44336; }
+        .miner-hp-bar.medium { background: #ff980; }
+        
+        .miner-currency {
+            font-size: 10px;
+            color: #FFD700;
+            text-shadow: 1px 1px 0 #000;
+            font-family: monospace;
+        }
+        
+        .miner-pickaxe-info {
+            font-size: 9px;
+            color: #aaa;
+            font-family: 'Press Start 2P', monospace;
+        }
+        
+        .miner-game-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #miner-canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        
+        .miner-footer {
+            width: 10%;
+            padding: 8px 12px;
+            background: #1a1a2e;
+            border-top: 2px solid #2A2E3C;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            min-height: 40px;
+        }
+        
+        .miner-footer-item {
+            font-size: 9px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'Press Start 2P', monospace;
+        }
+        
+        /* WHEEL SCREEN */
+        .miner-wheel-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 16px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+        }
+        
+        .miner-wheel-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #0;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .miner-wheel-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 8px 0;
+        }
+        
+        #wheel-canvas {
+            width: 260px;
+            height: 260px;
+            image-rendering: pixelated;
+        }
+        
+        .wheel-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 18px solid #ff4444;
+            z-index: 10;
+            filter: drop-shadow(0 2px 0 #aa00);
+        }
+        
+        .miner-spin-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 1px;
+            padding: 12px 32px;
+            background: #FF9040;
+            color: #0A0C14;
+            border: 3px solid #CC7030;
+            cursor: pointer;
+            box-shadow: inset -3px -3px 0 #CC7030, inset 3px 3px 0 #FFB070, 3px 3px 0 #1b5e20;
+            transition: transform 0.1s;
+        }
+        
+        .miner-spin-btn:active { transform: translate(2px, 2px); box-shadow: inset -3px -3px 0 #CC7030, inset 3px 3px 0 #FFB070; }
+        .miner-spin-btn:disabled { background: #555; border-color: #33; cursor: not-allowed; }
+        
+        .miner-attempts {
+            display: flex;
+            gap: 6px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .miner-attempt-slot {
+            width: 26px;
+            height: 26px;
+            background: #2a2a4a;
+            border: 2px solid #4a4a6a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+        
+        .miner-attempt-slot.success { background: #2E7D32; border-color: #4CAF50; }
+        .miner-attempt-slot.fail { background: #C62828; border-color: #ef5350; }
+        
+        .miner-subtitle {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #aaa;
+            margin-top: 10px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: #2a2a4a;
+            border: 3px solid #4a4a6a;
+            padding: 24px;
+            text-align: center;
+            max-width: 30px;
+            border-radius: 16px;
+        }
+        
+        .modal h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: #FFD700;
+            margin-bottom: 12px;
+        }
+        
+        .modal canvas {
+            image-rendering: pixelated;
+            margin: 10px auto;
+            display: block;
+        }
+        
+        .modal p {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #ccc;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        .modal-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 10px 24px;
+            background: #FF9040;
+            color: #0A0C14;
+            border: 3px solid #CC7030;
+            cursor: pointer;
+        }
+        
+        .pickaxe-select {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        
+        .pickaxe-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #1a1a2e;
+            border: 2px solid #4a4a6a;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        
+        .pickaxe-option.selected { border-color: #FF9040; background: #2a2014; }
+        .pickaxe-option canvas { image-rendering: pixelated; }
+        .pickaxe-option .px-name { font-family: 'Press Start 2P', monospace; font-size: 9px; color: #fff; }
+        .pickaxe-option .px-info { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #aaa; }
+        
+        .hidden { display: none !important; }
+        
+        .screen-shake { animation: shake 0.3s ease-out; }
+        @keyframes shake {
+            0%,10%{transform:translate(0)} 25%{transform:translate(-3px,2px)} 50%{transform:translate(3px,-2px)} 75%{transform:translate(-2px,3px)}
+        }
+        
+        .explosion-flash {
+            position: fixed;
+            top:0;left:0;width:100%;height:100%;
+            background:rgba(25,20,50,0.4);
+            z-index:95;
+            animation:flashOut 0.3s ease-out forwards;
+            pointer-events:none;
+        }
+        @keyframes flashOut{0%{opacity:1}10%{opacity:0}}
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div class="main-content">
+        <!-- CRASH GAME PAGE -->
+        <div id="gamePage" class="page active-page">
+            <div class="game-container">
+                <div class="balance-panel">
+                    <div class="balance-label"><span>💰</span> БАЛАНС</div>
+                    <div class="balance-value" id="balanceDisplay">100.00</div>
+                </div>
+                <div class="history-strip" id="historyStrip"></div>
+                <div class="rocket-stage">
+                    <div class="multiplier-badge" id="liveMultiplier">1.00x</div>
+                    <canvas id="rocketCanvas" width="500" height="280" style="width:100%;aspect-ratio:500/280"></canvas>
+                </div>
+                <div class="payout-panel">
+                    <div class="card"><div class="label">PAYOUT</div><div class="value" id="currentPayout">1.00x</div></div>
+                    <div class="card"><div class="label">AUTO CASH</div><input type="number" id="autoCashoutInput" class="auto-input" value="10.00" step="0.5"></div>
+                </div>
+                <div class="bet-zone">
+                    <div class="mode-group"><span id="manualMode" class="mode-btn mode-active">Manual</span><span id="autoMode" class="mode-btn">Auto</span></div>
+                    <div class="bet-control"><input type="number" id="betAmount" value="10" step="5"><button id="maxBet" class="max-btn">MAX</button></div>
+                </div>
+                <button id="placeBetButton" class="bet-action">🔥 СТАВКА 🔥</button>
+                <button id="cashoutButton" class="cashout-action" disabled>💎 ЗАБРАТЬ 💎</button>
+                <div class="status-text" id="gameStatus">⏳ ОЖИДАНИЕ СТАВКИ ⏳</div>
+                <div class="timer-bar" id="timerBar" style="display:none;"><div class="timer-fill" id="timerFill"></div></div>
+            </div>
+        </div>
+
+        <!-- PROFILE PAGE -->
+        <div id="profilePage" class="page">
+            <div class="profile-card">
+                <div class="avatar">🚀</div>
+                <div class="tg-name" id="tgUsername">Telegram Player</div>
+                <div class="stat-row"><span class="stat-label">💰 Баланс</span><span id="profileBalance">0</span></div>
+                <div class="stat-row"><span class="stat-label">🏆 Лучший множитель</span><span id="bestMulti">1.00x</span></div>
+                <div class="stat-row"><span class="stat-label">🎲 Сыграно раундов</span><span id="totalRounds">0</span></div>
+                <div class="stat-row"><span class="stat-label">💸 Общий выигрыш</span><span id="totalWin">0</span></div>
+                <button id="resetStatsBtn" class="reset-stats">♻️ Сбросить статистику</button>
+            </div>
+        </div>
+
+        <!-- MINER GAME PAGE -->
+        <div id="minerPage" class="page">
+            <div class="miner-container">
+                <!-- Wheel Screen -->
+                <div id="wheel-screen" class="miner-wheel-screen">
+                    <div class="miner-wheel-title">⚙ КОЛЕСО УДАЧИ ⚙</div>
+                    <div class="miner-wheel-container">
+                        <div class="wheel-pointer"></div>
+                        <canvas id="wheel-canvas" width="520" height="520"></canvas>
+                    </div>
+                    <button class="miner-spin-btn" id="spin-btn">КРУТИТЬ!</button>
+                    <div class="miner-attempts" id="attempts"></div>
+                    <div class="miner-subtitle" id="wheel-subtitle">Испытай удачу!<br>Выпадет кирка — начнёшь копать!</div>
+                </div>
+                
+                <!-- Game Screen -->
+                <div id="miner-game-screen" class="hidden" style="height:100%;display:flex;flex-direction:column;">
+                    <div class="miner-header">
+                        <div class="miner-hp-container">
+                            <canvas id="heart-canvas" width="16" height="16" class="miner-hp-icon"></canvas>
+                            <div class="miner-hp-bar-bg"><div class="miner-hp-bar" id="hp-bar"></div></div>
+                            <span style="font-size:9px;color:#fff;font-family:monospace" id="hp-text">100</span>
+                        </div>
+                        <div style="text-align:center">
+                            <div class="miner-currency" id="currency-display">0</div>
+                            <div class="miner-pickaxe-info" id="pickaxe-level">Деревянная</div>
+                        </div>
+                    </div>
+                    <div class="miner-game-area">
+                        <canvas id="miner-canvas"></canvas>
+                    </div>
+                    <div class="miner-footer">
+                        <div class="miner-footer-item">Блоки: <span id="blocks-mined">0</span></div>
+                        <div class="miner-footer-item">Всего: <span id="total-currency">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div id="navGame" class="nav-item active"><span class="nav-icon">🎲</span><span>Игра</span></div>
+        <div id="navMiner" class="nav-item"><span class="nav-icon">⛏️</span><span>Шахта</span></div>
+        <div id="navProfile" class="nav-item"><span class="nav-icon">👤</span><span>Профиль</span></div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="result-modal">
+    <div class="modal">
+        <h2 id="modal-title">Результат</h2>
+        <canvas id="modal-canvas" width="48" height="48"></canvas>
+        <p id="modal-text">Текст</p>
+        <button class="modal-btn" id="modal-btn">OK</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="pickaxe-modal">
+    <div class="modal">
+        <h2>ВЫБЕРИ КИРКУ</h2>
+        <div class="pickaxe-select">
+            <div class="pickaxe-option selected" data-pickaxe="wood" onclick="selectPickaxe('wood')">
+                <canvas width="32" height="32" class="px-preview" data-type="wood"></canvas>
+                <div><div class="px-name">Деревянная</div><div class="px-info">HP: 100</div></div>
+            </div>
+            <div class="pickaxe-option" data-pickaxe="iron" onclick="selectPickaxe('iron')">
+                <canvas width="32" height="32" class="px-preview" data-type="iron"></canvas>
+                <div><div class="px-name">Железная</div><div class="px-info">HP: 250</div></div>
+            </div>
+            <div class="pickaxe-option" data-pickaxe="diamond" onclick="selectPickaxe('diamond')">
+                <canvas width="32" height="32" class="px-preview" data-type="diamond"></canvas>
+                <div><div class="px-name">Алмазная</div><div class="px-info">HP: 400</div></div>
+            </div>
+        </div>
+        <button class="modal-btn" style="margin-top:10px" onclick="startGameWithPickaxe()">НАЧАТЬ!</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ---- Telegram WebApp ----
+    let tg = window.Telegram?.WebApp;
+    if(tg) { tg.expand(); tg.enableClosingConfirmation(); }
+
+    // ==== NAVIGATION ====
+    const pages = { game: document.getElementById('gamePage'), profile: document.getElementById('profilePage'), miner: document.getElementById('minerPage') };
+    const navs = { game: document.getElementById('navGame'), profile: document.getElementById('navProfile'), miner: document.getElementById('navMiner') };
+    
+    function setActivePage(page) {
+        Object.keys(pages).forEach(k => {
+            pages[k].classList.toggle('active-page', k === page);
+            navs[k].classList.toggle('active', k === page);
+        });
+        if(page === 'game') initCrashGame();
+        if(page === 'miner') initMinerNav();
+        if(page === 'profile') updateStatsUI();
+    }
+    
+    navs.game.onclick = () => setActivePage('game');
+    navs.miner.onclick = () => setActivePage('miner');
+    navs.profile.onclick = () => setActivePage('profile');
+
+    // ==== CRASH GAME (existing logic) ====
+    let crashInitialized = false;
+    function initCrashGame() {
+        if(crashInitialized) return;
+        crashInitialized = true;
+        
+        const canvas = document.getElementById('rocketCanvas');
+        const ctx = canvas.getContext('2d');
+        const liveMultiplierSpan = document.getElementById('liveMultiplier');
+        const currentPayoutSpan = document.getElementById('currentPayout');
+        const gameStatusDiv = document.getElementById('gameStatus');
+        const balanceDisplaySpan = document.getElementById('balanceDisplay');
+        const betInput = document.getElementById('betAmount');
+        const placeBetBtn = document.getElementById('placeBetButton');
+        const cashoutBtn = document.getElementById('cashoutButton');
+        const maxBetBtn = document.getElementById('maxBet');
+        const manualModeBtn = document.getElementById('manualMode');
+        const autoModeBtn = document.getElementById('autoMode');
+        const autoCashoutInput = document.getElementById('autoCashoutInput');
+        const timerBar = document.getElementById('timerBar');
+        const timerFill = document.getElementById('timerFill');
+        const historyStrip = document.getElementById('historyStrip');
+        const profileBalanceSpan = document.getElementById('profileBalance');
+        const bestMultiSpan = document.getElementById('bestMulti');
+        const totalRoundsSpan = document.getElementById('totalRounds');
+        const totalWinSpan = document.getElementById('totalWin');
+        const resetStatsBtn = document.getElementById('resetStatsBtn');
+        const tgUsernameSpan = document.getElementById('tgUsername');
+
+        let stats = { bestMulti: 1.00, totalRounds: 0, totalWinAmount: 0 };
+        function loadStats() {
+            const saved = localStorage.getItem('crash_stats');
+            if(saved) { try { const s = JSON.parse(saved); stats.bestMulti = s.bestMulti||1.00; stats.totalRounds = s.totalRounds||0; stats.totalWinAmount = s.totalWinAmount||0; } catch(e){} }
+            updateStatsUI();
+        }
+        function saveStats() { localStorage.setItem('crash_stats', JSON.stringify(stats)); }
+        function updateStatsUI() {
+            profileBalanceSpan.innerText = balance.toFixed(2);
+            bestMultiSpan.innerText = stats.bestMulti.toFixed(2)+'x';
+            totalRoundsSpan.innerText = stats.totalRounds;
+            totalWinSpan.innerText = stats.totalWinAmount.toFixed(2);
+        }
+        function addRoundStat(multiplier, winAmount) {
+            stats.totalRounds++;
+            if(multiplier > stats.bestMulti) stats.bestMulti = multiplier;
+            stats.totalWinAmount += winAmount;
+            saveStats(); updateStatsUI();
+        }
+        resetStatsBtn.onclick = () => {
+            stats = { bestMulti:1.00, totalRounds:0, totalWinAmount:0 };
+            saveStats(); updateStatsUI();
+            if(tg) tg.showPopup({title:"Статистика",message:"Сброшена!",buttons:[{type:"ok"}]});
+        };
+
+        let balance = 10.0;
+        const savedBalance = localStorage.getItem('crash_balance');
+        if(savedBalance !== null && !isNaN(parseFloat(savedBalance))) balance = parseFloat(savedBalance);
+        function saveBalance() { localStorage.setItem('crash_balance', balance.toFixed(2)); updateStatsUI(); }
+
+        let currentBet = 0, gameActive = false, currentMultiplier = 1.00, crashPoint = 1.00;
+        let animationId = null, hasCashed = false, isAuto = false, autoTarget = 10.00;
+        let countdownInterval = null, autoStartTimer = null, pendingBet = 10;
+        let crashHistory = [1.42,2.15,1.8,1.09,3.21,1.67];
+        let trailParticles = [], explodeParticles = [], explosionActive = false;
+
+        function resizeCanvasTMA() {
+            const container = canvas.parentElement;
+            const maxW = Math.min(500, container.clientWidth - 16);
+            canvas.style.width = `${maxW}px`;
+            canvas.width = maxW;
+            canvas.height = maxW * 0.56;
+        }
+        window.addEventListener('resize', () => resizeCanvasTMA());
+        resizeCanvasTMA();
+
+        function updateBalanceUI() {
+            balanceDisplaySpan.innerText = balance.toFixed(2);
+            saveBalance();
+            if(profileBalanceSpan) profileBalanceSpan.innerText = balance.toFixed(2);
+        }
+
+        function addTrail(x,y) {
+            trailParticles.push({x,y,vx:(Math.random()-0.5)*1.2,vy:(Math.random()-0.5)*0.8-0.6,life:1.0,size:2+Math.random()*4});
+            if(trailParticles.length>45) trailParticles.shift();
+        }
+        function updateTrail() { for(let i=trailParticles.length-1;i>=0;i--){let p=trailParticles[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.02;if(p.life<=0) trailParticles.splice(i,1);} }
+        function drawTrail() { for(let p of trailParticles){ctx.globalAlpha=p.life*0.7;ctx.fillStyle=`rgba(255,100,30,${p.life})`;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();} ctx.globalAlpha=1; }
+        function addExplode(x,y) { for(let i=0;i<28;i++){let angle=Math.random()*Math.PI*2;let speed=2+Math.random()*6;explodeParticles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-2,life:1.0,size:3+Math.random()*6,color:`hsl(${25+Math.random()*35},85%,55%)`});} }
+        function updateExplode() { for(let i=explodeParticles.length-1;i>=0;i--){let p=explodeParticles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life-=0.025;if(p.life<=0) explodeParticles.splice(i,1);} }
+        function drawExplode() { for(let p of explodeParticles){ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();} ctx.globalAlpha=1; }
+
+        function drawRocket3D(x,y,angle,progress,time) {
+            ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
+            let flame=14+Math.sin(time*45)*6;
+            ctx.fillStyle='#FF4A1A'; ctx.beginPath(); ctx.moveTo(-10,12); ctx.lineTo(0,12+flame); ctx.lineTo(10,12); ctx.fill();
+            ctx.fillStyle='#FF914D'; ctx.beginPath(); ctx.moveTo(-5,8); ctx.lineTo(0,8+flame*0.6); ctx.lineTo(5,8); ctx.fill();
+            let grad=ctx.createLinearGradient(-8,-10,8,10); grad.addColorStop(0,'#E0E6FF'); grad.addColorStop(1,'#A0A8CC');
+            ctx.fillStyle=grad; ctx.shadowBlur=12; ctx.shadowColor='#FF8844';
+            ctx.beginPath(); ctx.ellipse(0,-3,12,19,0,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='#FF5C5C'; ctx.beginPath(); ctx.moveTo(-8,-16); ctx.lineTo(0,-34); ctx.lineTo(8,-16); ctx.fill();
+            ctx.fillStyle='#FFFFFFA0'; ctx.beginPath(); ctx.ellipse(-3,-8,3,5,0,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='#5AB8FF'; ctx.beginPath(); ctx.arc(0,-9,5.2,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='#1E5480'; ctx.beginPath(); ctx.arc(0,-9,2.5,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(-2,-12,1.2,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='#B0B8D8'; ctx.beginPath(); ctx.moveTo(-12,2); ctx.lineTo(-24,14); ctx.lineTo(-12,9); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(12,2); ctx.lineTo(24,14); ctx.lineTo(12,9); ctx.fill();
+            ctx.shadowBlur=0; ctx.restore();
+            if(gameActive && progress>0.05){let backX=x-Math.cos(angle)*20;let backY=y-Math.sin(angle)*20;addTrail(backX,backY);}
+        }
+
+        function renderScene() {
+            if(!ctx) return;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            let grad=ctx.createLinearGradient(0,0,0,canvas.height); grad.addColorStop(0,'#03051C'); grad.addColorStop(1,'#0B1024');
+            ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
+            let progress=0; if(gameActive) progress=Math.min(1.0,(currentMultiplier-1.0)/14.0);
+            let moonX=(progress*canvas.width*1.3)-50; if(moonX>canvas.width+70) moonX=-70;
+            ctx.shadowBlur=20; ctx.shadowColor='#FFD58C';
+            ctx.beginPath(); ctx.arc(moonX,55,34,0,Math.PI*2); ctx.fillStyle='#F7E6C4'; ctx.fill();
+            ctx.beginPath(); ctx.arc(moonX-14,48,8,0,Math.PI*2); ctx.fillStyle='#E2C47A'; ctx.fill();
+            ctx.beginPath(); ctx.arc(moonX+12,67,6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+            updateTrail(); drawTrail();
+            if(!explosionActive && gameActive) {
+                let startX=-30,startY=canvas.height-15,endX=canvas.width+70,endY=-40;
+                let x=startX+(endX-startX)*progress, y=startY+(endY-startY)*progress;
+                let angle=-0.6+progress*0.9;
+                let time=performance.now()/200, shake=progress*2.2;
+                let shX=Math.sin(time*30)*shake, shY=Math.cos(time*3)*shake*0.6;
+                drawRocket3D(x+shX,y+shY,angle,progress,performance.now());
+            } else if(explosionActive) { updateExplode(); drawExplode(); }
+            requestAnimationFrame(renderScene);
+        }
+        renderScene();
+
+        function updateHistoryUI() {
+            let html=''; crashHistory.slice(0,8).forEach(v=>{html+=`<span class="history-chip">${v.toFixed(2)}x</span>`;});
+            historyStrip.innerHTML=html;
+        }
+        function addCrashHistory(val) { crashHistory.unshift(val); if(crashHistory.length>8) crashHistory.pop(); updateHistoryUI(); }
+        function generateCrash() { let r=Math.random(); let raw=1.0/(0.96-r*0.92); let crash=Math.min(Math.max(raw,1.05),40); if(Math.random()<0.15) crash=1.1+Math.random()*1.7; return parseFloat(crash.toFixed(3)); }
+        function crashEffectAtPoint(progress) {
+            let startX=-30,startY=canvas.height-15,endX=canvas.width+70,endY=-40;
+            let x=startX+(endX-startX)*progress, y=startY+(endY-startY)*progress;
+            addExplode(x,y); explosionActive=true; setTimeout(()=>{explosionActive=false;explodeParticles=[];},1300);
+        }
+
+        function startRound(bet) {
+            if(gameActive) return;
+            if(bet<=0||balance<bet){gameStatusDiv.innerText="❌ Не хватает баланса";return;}
+            balance-=bet; currentBet=bet; hasCashed=false; gameActive=true; currentMultiplier=1.0; crashPoint=generateCrash();
+            liveMultiplierSpan.innerText="1.00x"; currentPayoutSpan.innerText="1.00x";
+            gameStatusDiv.innerText="🚀 РАКЕТА ЛЕТИТ! ЗАБИРАЙ!"; cashoutBtn.disabled=false; updateBalanceUI();
+            if(animationId) cancelAnimationFrame(animationId);
+            let last=performance.now();
+            function updateLoop(now) {
+                if(!gameActive) return;
+                let delta=Math.min(0.04,(now-last)/10); last=now;
+                let inc=delta*0.28*(0.85+Math.random()*0.3);
+                let newMul=currentMultiplier+inc;
+                if(newMul>=crashPoint) {
+                    gameActive=false; currentMultiplier=crashPoint;
+                    liveMultiplierSpan.innerText=crashPoint.toFixed(2)+"x"; currentPayoutSpan.innerText=crashPoint.toFixed(2)+"x";
+                    let prog=Math.min(1.0,(crashPoint-1.0)/14.0); crashEffectAtPoint(prog);
+                    if(!hasCashed) gameStatusDiv.innerText=`💥 КРАШ НА ${crashPoint.toFixed(2)}x!`;
+                    else gameStatusDiv.innerText=`💥 РАКЕТА ВЗОРВАЛАСЬ, ВЫ ЗАБРАЛИ`;
+                    addCrashHistory(crashPoint); addRoundStat(crashPoint, hasCashed ? currentBet*crashPoint : 0);
+                    cashoutBtn.disabled=true; cancelAnimationFrame(animationId); animationId=null;
+                    startAutoRestart(); return;
+                }
+                currentMultiplier=newMul;
+                liveMultiplierSpan.innerText=currentMultiplier.toFixed(2)+"x"; currentPayoutSpan.innerText=currentMultiplier.toFixed(2)+"x";
+                if(isAuto && !hasCashed && currentMultiplier>=autoTarget) cashout();
+                animationId=requestAnimationFrame(updateLoop);
+            }
+            last=performance.now(); animationId=requestAnimationFrame(updateLoop);
+        }
+
+        function cashout() {
+            if(!gameActive||hasCashed) return;
+            let win=currentBet*currentMultiplier; balance+=win; hasCashed=true;
+            gameStatusDiv.innerText=`🎉 ВЫИГРАНО ${win.toFixed(2)}`;
+            cashoutBtn.disabled=true; updateBalanceUI();
+            addRoundStat(currentMultiplier, win);
+        }
+
+        function startAutoRestart() {
+            if(countdownInterval) clearInterval(countdownInterval); if(autoStartTimer) clearTimeout(autoStartTimer);
+            let remaining=6;
+            timerBar.style.display='block'; timerFill.style.width='100%';
+            gameStatusDiv.innerText=`⏳ НОВАЯ СТАВКА ЧЕРЕЗ ${remaining}С`;
+            countdownInterval=setInterval(()=>{
+                remaining--; timerFill.style.width=`${(remaining/6)*100}%`;
+                gameStatusDiv.innerText=`⏳ АВТОСТАРТ ЧЕРЕЗ ${remaining}С`;
+                if(remaining<=0){clearInterval(countdownInterval);timerBar.style.display='none';startNewAutoRound();}
+            },100);
+            autoStartTimer=setTimeout(()=>{if(countdownInterval)clearInterval(countdownInterval);timerBar.style.display='none';startNewAutoRound();},60);
+        }
+
+        function startNewAutoRound() { if(gameActive) return; if(pendingBet>balance){gameStatusDiv.innerText="❌ БАЛАНСА НЕТ";return;} startRound(pendingBet); }
+        function updatePendingBet() { let val=parseFloat(betInput.value); if(isNaN(val)) val=10; val=Math.max(1,Math.min(val,balance)); pendingBet=val; betInput.value=pendingBet; }
+
+        placeBetBtn.onclick=()=>{ updatePendingBet(); if(!gameActive&&!countdownInterval){gameStatusDiv.innerText=`✅ СТАВКА ${pendingBet}`;} };
+        cashoutBtn.onclick=()=>{ if(gameActive&&!hasCashed) cashout(); };
+        maxBetBtn.onclick=()=>{ betInput.value=Math.floor(balance); updatePendingBet(); };
+        manualModeBtn.onclick=()=>{ isAuto=false; manualModeBtn.classList.add('mode-active'); autoModeBtn.classList.remove('mode-active'); };
+        autoModeBtn.onclick=()=>{ isAuto=true; autoModeBtn.classList.add('mode-active'); manualModeBtn.classList.remove('mode-active'); };
+        autoCashoutInput.onchange=()=>{ autoTarget=parseFloat(autoCashoutInput.value)||10; };
+
+        if(tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            let user=tg.initDataUnsafe.user;
+            tgUsernameSpan.innerText=user.first_name || user.username || 'Игрок';
+        }
+
+        updateHistoryUI(); updatePendingBet(); updateBalanceUI(); loadStats();
+        if(!gameActive && !countdownInterval) startAutoRestart();
+    }
+
+    // ==== MINER GAME ====
+    let minerInitialized = false;
+    let minerGameLoopId = null;
+    let minerState = {};
+
+    function initMinerNav() {
+        if(!minerInitialized) {
+            minerInitialized = true;
+            initMinerGame();
+        }
+        // Reset to wheel screen when entering miner tab
+        if(minerState.wheelScreenEl && minerState.gameScreenEl) {
+            minerState.wheelScreenEl.classList.remove('hidden');
+            minerState.gameScreenEl.classList.add('hidden');
+            minerState.gameScreenEl.style.display = 'none';
+            minerState.wheelScreenEl.style.display = 'flex';
+        }
+    }
+
+    function initMinerGame() {
+        // Pixel art texture generator
+        function createBlockTexture(colors, pattern) {
+            const c = document.createElement('canvas');
+            c.width = 16; c.height = 16;
+            const ctx = c.getContext('2d');
+            for(let y=0;y<16;y++) for(let x=0;x<16;x++) {
+                const ci = pattern[y] ? (pattern[y][x] !== undefined ? pattern[y][x] : 0) : 0;
+                ctx.fillStyle = colors[ci];
+                ctx.fillRect(x,y,1,1);
+            }
+            return c;
+        }
+
+        const dirtTex = createBlockTexture(['#8B6914','#7A5A12','#6B4D10','#9B7B24'],
+            [[0,0,0,1,0,0,2,0,0,0,1,0,0,0,0,3],[0,1,0,0,2,0,0,1,0,0,0,2,0,1,0,0],[2,0,1,0,0,0,0,0,1,2,0,0,0,0,1,0],[0,0,0,2,0,1,0,0,0,0,1,0,2,0,0,0],[1,0,0,0,0,0,1,0,2,0,0,0,0,1,0,2],[0,2,0,0,1,0,0,0,0,0,0,1,0,0,0,0],[0,0,1,0,0,2,0,0,0,1,0,0,0,0,2,0],[1,0,0,0,0,0,0,1,0,0,2,0,0,0,0,1],[0,0,0,1,0,0,0,0,2,0,0,0,1,0,0,0],[0,1,0,0,0,0,2,0,0,0,0,0,0,1,0,0],[2,0,0,0,1,0,0,0,0,0,1,0,0,0,0,2],[0,0,1,0,0,0,0,0,1,0,0,0,2,0,0,0],[0,0,0,0,0,1,0,2,0,0,0,0,0,0,1,0],[1,0,0,2,0,0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0,0,1,0,0,0,0,2,0,1,0,0],[0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,1]]);
+
+        const cobbleTex = createBlockTexture(['#757575','#616161','#8D8D8D','#505050'],
+            [[0,0,1,1,0,0,0,2,2,0,0,1,0,0,0,2],[0,1,1,0,0,2,0,0,0,1,0,0,2,0,1,0],[2,0,0,0,1,0,0,0,0,0,2,0,0,1,0,0],[1,0,0,2,0,0,1,0,0,0,0,0,0,0,2,0],[0,0,1,0,0,0,0,0,2,0,1,0,0,0,0,1],[0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0],[1,0,0,0,2,0,0,0,0,1,0,0,0,0,0,2],[0,0,0,1,0,0,0,2,0,0,0,0,0,1,0,0],[0,0,2,0,0,0,0,0,0,0,1,0,2,0,0,0],[1,0,0,0,0,0,1,0,0,2,0,0,0,0,1,0],[0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,2,0,0,0,1],[0,0,0,2,0,0,0,0,1,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0],[0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,2]]);
+
+        const coalTex = createBlockTexture(['#757575','#212121','#424242'],
+            [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0],[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]);
+
+        const ironTex = createBlockTexture(['#757575','#D7CCC8','#BCAAA4'],
+            [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]);
+
+        const goldTex = createBlockTexture(['#757575','#FFD54F','#FFC107'],
+            [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]);
+        (function(){const c=goldTex.getContext('2d');[[2,1],[8,3],[5,7],[12,5],[3,10],[10,12],[7,14],[14,8],[1,13],[9,2]].forEach(([x,y])=>{c.fillStyle=Math.random()>0.5?'#FFD54F':'#FFC107';c.fillRect(x,y,1,1);});})();
+
+        const diamondTex = createBlockTexture(['#757575','#0BCD4','#4DD0E1'],
+            [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]);
+        (function(){const c=diamondTex.getContext('2d');[[3,4],[9,6],[5,10],[12,3],[7,13],[2,8],[10,11],[4,1],[8,14],[14,7],[1,12]].forEach(([x,y])=>{c.fillStyle=Math.random()>0.5?'#00BCD4':'#4DD0E1';c.fillRect(x,y,1,1);});})();
+
+        const tntTex = createBlockTexture(['#F4436','#FFFFFF','#D32F2F','#212121','#B71C1C'],
+            [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]);
+        (function(){const c=tntTex.getContext('2d');for(let x=0;x<16;x++){c.fillStyle='#FFFFFF';c.fillRect(x,6,1,1);c.fillRect(x,7,1,1);c.fillRect(x,8,1,1);}c.fillStyle='#D32F2F';for(let x=3;x<13;x++)c.fillRect(x,7,1,1);c.fillStyle='#212121';c.fillRect(7,0,2,2);c.fillRect(6,1,1,1);c.fillStyle='#B71C1C';c.fillRect(8,0,1,1);})();
+
+        const netheriteTex = createBlockTexture(['#1a237e','#283593','#151B6E','#303F9F'],
+            [[0,1,0,2,0,1,0,2,0,1,0,2,0,1,0,2],[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,0],[0,2,0,1,0,2,0,1,0,2,0,1,0,2,0,1],[1,0,2,0,1,0,2,0,1,0,2,0,1,0,2,0],[0,1,0,2,0,1,0,2,0,1,0,2,0,1,0,2],[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,0],[0,2,0,1,0,2,0,1,0,2,0,1,0,2,0,1],[1,0,2,0,1,0,2,0,1,0,2,0,1,0,2,0],[0,1,0,2,0,1,0,2,0,1,0,2,0,1,0,2],[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,0],[0,2,0,1,0,2,0,1,0,2,0,1,0,2,0,1],[1,0,2,0,1,0,2,0,1,0,2,0,1,0,2,0],[0,1,0,2,0,1,0,2,0,1,0,2,0,1,0,2],[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,0],[0,2,0,1,0,2,0,1,0,2,0,1,0,2,0,1],[1,0,2,0,1,0,2,0,1,0,2,0,1,0,2,0]]);
+
+        function createPickaxeTexture(handleColor, headColor, highlight) {
+            const c = document.createElement('canvas');
+            c.width = 16; c.height = 16;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = handleColor;
+            [[10,4,2,2],[9,5,2,2],[8,6,2,2],[7,7,2,2],[6,8,2,2],[5,9,2,2],[4,10,2,2],[3,11,2,2],[2,12,2,2],[1,13,2,2]].forEach(([x,y,w,h])=>ctx.fillRect(x,y,w,h));
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            [[10,4,1,1],[9,5,1,1],[8,6,1,1]].forEach(([x,y,w,h])=>ctx.fillRect(x,y,w,h));
+            ctx.fillStyle = headColor;
+            [[6,2,2,2],[5,3,2,2],[4,3,2,2],[3,4,2,2],[3,5,1,2],[11,2,2,2],[10,3,2,2],[11,3,2,2],[12,4,2,2],[13,5,1,2],[8,3,2,1],[8,4,1,1],[9,4,1,1]].forEach(([x,y,w,h])=>ctx.fillRect(x,y,w,h));
+            ctx.fillStyle = highlight || 'rgba(255,255,255,0.4)';
+            [[4,3,1,1],[1,3,1,1],[3,4,1,1],[12,4,1,1]].forEach(([x,y,w,h])=>ctx.fillRect(x,y,w,h));
+            return c;
+        }
+
+        const woodPickTex = createPickaxeTexture('#8B6914','#A0742A','#C49A3C');
+        const ironPickTex = createPickaxeTexture('#757575','#BDBDBD','#E0E0E0');
+        const diamondPickTex = createPickaxeTexture('#757575','#00BCD4','#4DD0E1');
+        const pickaxeTextures = { wood: woodPickTex, iron: ironPickTex, diamond: diamondPickTex };
+
+        function createHeartTexture() {
+            const c = document.createElement('canvas');
+            c.width = 16; c.height = 16;
+            const ctx = c.getContext('2d');
+            const heart = [[0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0],[0,1,1,1,1,0,0,1,1,1,1,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],[0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0],[0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0],[0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],[0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0]];
+            heart.forEach((row,y)=>{row.forEach((v,x)=>{if(v){ctx.fillStyle='#F44336';ctx.fillRect(x,y,1,1);if(y<4&&x>1&&x<10){ctx.fillStyle='#FF8A80';ctx.fillRect(x,y,1,1);}if(y>=5){ctx.fillStyle='#D32F2F';ctx.fillRect(x,y,1,1);}}});
+            return c;
+        }
+        const heartTex = createHeartTexture();
+
+        const blockTextures = { dirt: dirtTex, cobble: cobbleTex, coal: coalTex, iron_b: ironTex, gold_b: goldTex, diamond_b: diamondTex, tnt: tntTex, netherite: netheriteTex };
+
+        const PICKAXES = {
+            wood: { name: 'Деревянная', hp: 100, maxHp: 100, level: 1, color: '#8B6914' },
+            iron: { name: 'Железная', hp: 250, maxHp: 250, level: 2, color: '#9E9E9E' },
+            diamond: { name: 'Алмазная', hp: 40, maxHp: 400, level: 3, color: '#00BCD4' }
+        };
+
+        const BLOCKS = {
+            dirt: { name:'Земля', hp:10, reward:0, rarity:35, color:'#8B6914', dmgToPickaxe:5 },
+            cobble: { name:'Булыжник', hp:20, reward:0, rarity:28, color:'#757575', dmgToPickaxe:8 },
+            coal: { name:'Уголь', hp:15, reward:5, rarity:18, color:'#424242', dmgToPickaxe:3 },
+            iron_b: { name:'Железо', hp:25, reward:15, rarity:10, color:'#D7CCC8', dmgToPickaxe:5 },
+            gold_b: { name:'Золото', hp:30, reward:30, rarity:6, color:'#FFD54F', dmgToPickaxe:7 },
+            diamond_b: { name:'Алмаз', hp:40, reward:60, rarity:2, color:'#00BCD4', dmgToPickaxe:10 },
+            tnt: { name:'Динамит', hp:5, reward:10, rarity:1, color:'#F44336', dmgToPickaxe:15 }
+        };
+
+        const WHEEL_SEGMENTS = [
+            {type:'pickaxe',pickaxe:'wood',color:'#8B6914'}, {type:'cross',color:'#C62828'},
+            {type:'pickaxe',pickaxe:'wood',color:'#8B6914'}, {type:'cross',color:'#C62828'},
+            {type:'pickaxe',pickaxe:'iron',color:'#9E9E9E'}, {type:'cross',color:'#C62828'},
+            {type:'pickaxe',pickaxe:'wood',color:'#8B6914'}, {type:'cross',color:'#C62828'},
+            {type:'pickaxe',pickaxe:'iron',color:'#9E9E9E'}, {type:'cross',color:'#C62828'},
+            {type:'pickaxe',pickaxe:'diamond',color:'#00BCD4'}, {type:'cross',color:'#C62828'}
+        ];
+
+        // State
+        minerState = {
+            attempts: Array(8).fill(null),
+            currentAttempt: 0,
+            selectedPickaxe: 'wood',
+            pickaxe: null,
+            blocks: [],
+            particles: [],
+            explosions: [],
+            gameRunning: false,
+            gravity: 0.35,
+            bounceForce: -6,
+            sideBounce: 5,
+            wheelRotation: 0,
+            isSpinning: false,
+            cameraY: 0,
+            targetCameraY: 0,
+            wheelScreenEl: document.getElementById('wheel-screen'),
+            gameScreenEl: document.getElementById('miner-game-screen'),
+            totalCurrency: 0
+        };
+
+        // Draw pickaxe previews
+        document.querySelectorAll('.px-preview').forEach(c => {
+            const ctx = c.getContext('2d');
+            const tex = pickaxeTextures[c.dataset.type];
+            if(tex) ctx.drawImage(tex, 0, 0, 32, 32);
+        });
+
+        // Draw heart
+        const heartCanvas = document.getElementById('heart-canvas');
+        if(heartCanvas) {
+            const hCtx = heartCanvas.getContext('2d');
+            hCtx.clearRect(0,0,16,16);
+            hCtx.drawImage(heartTex, 0, 0);
+        }
+
+        // ===== WHEEL LOGIC =====
+        const wheelCanvas = document.getElementById('wheel-canvas');
+        const wheelCtx = wheelCanvas.getContext('2d');
+        const WHEEL_SIZE = 520;
+        const WHEEL_CENTER = WHEEL_SIZE / 2;
+        const WHEEL_RADIUS = WHEEL_SIZE / 2 - 20;
+
+        function drawWheel() {
+            const ctx = wheelCtx;
+            const segAngle = (Math.PI * 2) / WHEEL_SEGMENTS.length;
+            ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+            ctx.save();
+            ctx.translate(WHEEL_CENTER, WHEEL_CENTER);
+            ctx.rotate(minerState.wheelRotation);
+
+            WHEEL_SEGMENTS.forEach((seg, i) => {
+                const startAngle = i * segAngle - Math.PI / 2;
+                const endAngle = startAngle + segAngle;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, WHEEL_RADIUS, startAngle, endAngle);
+                ctx.closePath();
+
+                let fillColor = seg.color;
+                if (i < minerState.attempts.length && minerState.attempts[i] === 'success') fillColor = '#4CAF50';
+                else if (i < minerState.attempts.length && minerState.attempts[i] === 'fail') fillColor = '#C62828';
+
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                ctx.strokeStyle = '#1a1a2e';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                const midAngle = startAngle + segAngle / 2;
+                const iconDist = WHEEL_RADIUS * 0.65;
+                const ix = Math.cos(midAngle) * iconDist;
+                const iy = Math.sin(midAngle) * iconDist;
+
+                ctx.save();
+                ctx.translate(ix, iy);
+                ctx.rotate(midAngle + Math.PI / 2);
+                if (seg.type === 'pickaxe') {
+                    const tex = pickaxeTextures[seg.pickaxe];
+                    ctx.drawImage(tex, -10, -10, 20, 20);
+                } else {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(-7,-7); ctx.lineTo(7,7);
+                    ctx.moveTo(7,-7); ctx.lineTo(-7,7);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            });
+
+            ctx.beginPath();
+            ctx.arc(0, 0, 22, 0, Math.PI * 2);
+            ctx.fillStyle = '#2a2a4a';
+            ctx.fill();
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function spinWheel() {
+            if (minerState.isSpinning) return;
+            if (minerState.currentAttempt >= minerState.attempts.length) {
+                resetWheel();
+                return;
+            }
+
+            minerState.isSpinning = true;
+            document.getElementById('spin-btn').disabled = true;
+
+            const spins = 5 + Math.random() * 5;
+            const segAngle = (Math.PI * 2) / WHEEL_SEGMENTS.length;
+            const targetRotation = minerState.wheelRotation + spins * Math.PI * 2 + Math.random() * Math.PI * 2;
+            const duration = 3000;
+            const startTime = performance.now();
+            const startRotation = minerState.wheelRotation;
+
+            function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                minerState.wheelRotation = startRotation + (targetRotation - startRotation) * easeOutCubic(progress);
+                drawWheel();
+                if (progress < 1) requestAnimationFrame(animate);
+                else {
+                    minerState.isSpinning = false;
+                    determineResult(targetRotation, segAngle);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function determineResult(finalRotation, segAngle) {
+            const normalized = finalRotation % (Math.PI * 2);
+            const adjustedAngle = (Math.PI * 2 - normalized + Math.PI * 2 - Math.PI / 2) % (Math.PI * 2);
+            const segmentIndex = Math.floor(adjustedAngle / segAngle) % WHEEL_SEGMENTS.length;
+            const result = WHEEL_SEGMENTS[segmentIndex];
+
+            if (result.type === 'cross') {
+                minerState.attempts[minerState.currentAttempt] = 'fail';
+                minerState.currentAttempt++;
+                updateAttemptsUI();
+                drawWheel();
+
+                const allFailed = minerState.attempts.slice(0, minerState.currentAttempt).every(a => a === 'fail');
+                if (allFailed && minerState.currentAttempt >= minerState.attempts.length) {
+                    setTimeout(() => {
+                        showModal('УТЕШИТЕЛЬНЫЙ ПРИЗ', 'wood', 'Все попытки исчерпаны!\nТы получаешь деревянную кирку!', () => {
+                            hideModal();
+                            selectPickaxe('wood');
+                            document.getElementById('pickaxe-modal').classList.add('active');
+                        });
+                    }, 500);
+                } else if (minerState.currentAttempt >= minerState.attempts.length) {
+                    setTimeout(() => {
+                        showModal('ИСПЫТАНИЯ ОКОНЧЕНЫ', null, 'Попытки закончились!', () => {
+                            hideModal();
+                            resetWheel();
+                        });
+                    }, 50);
+                } else {
+                    document.getElementById('spin-btn').disabled = false;
+                }
+            } else {
+                minerState.attempts[minerState.currentAttempt] = 'success';
+                minerState.currentAttempt++;
+                updateAttemptsUI();
+                drawWheel();
+
+                setTimeout(() => {
+                    const name = PICKAXES[result.pickaxe].name;
+                    showModal('ПОБЕДА!', result.pickaxe, `Ты выбил ${name} кирку!\nВыбери её и начинай копать!`, () => {
+                        hideModal();
+                        minerState.selectedPickaxe = result.pickaxe;
+                        document.getElementById('pickaxe-modal').classList.add('active');
+                    });
+                }, 50);
+            }
+        }
+
+        function updateAttemptsUI() {
+            const container = document.getElementById('attempts');
+            container.innerHTML = '';
+            minerState.attempts.forEach((attempt) => {
+                const slot = document.createElement('div');
+                slot.className = 'miner-attempt-slot';
+                if (attempt === 'success') {
+                    slot.classList.add('success');
+                    slot.textContent = '✓';
+                } else if (attempt === 'fail') {
+                    slot.classList.add('fail');
+                    slot.textContent = '✗';
+                } else {
+                    slot.textContent = '?';
+                }
+                container.appendChild(slot);
+            });
+        }
+
+        function resetWheel() {
+            minerState.attempts = Array(8).fill(null);
+            minerState.currentAttempt = 0;
+            updateAttemptsUI();
+            drawWheel();
+            document.getElementById('spin-btn').disabled = false;
+        }
+
+        // ===== GAME LOGIC =====
+        function initMinerGameScreen() {
+            const gameCanvas = document.getElementById('miner-canvas');
+            const gameCtx = gameCanvas.getContext('2d');
+
+            const screen = document.getElementById('miner-game-screen');
+            const header = screen.querySelector('.miner-header');
+            const footer = screen.querySelector('.miner-footer');
+            const headerH = header ? header.offsetHeight : 50;
+            const footerH = footer ? footer.offsetHeight : 40;
+
+            gameCanvas.width = screen.clientWidth;
+            gameCanvas.height = screen.clientHeight - headerH - footerH;
+
+            const px = PICKAXES[minerState.selectedPickaxe];
+            minerState.pickaxe = {
+                ...px,
+                type: minerState.selectedPickaxe,
+                x: gameCanvas.width / 2,
+                y: 30,
+                vx: 0, vy: 0,
+                width: 24, height: 24,
+                rotation: 0,
+                combo: 0
+            };
+
+            minerState.blocks = [];
+            minerState.particles = [];
+            minerState.explosions = [];
+            minerState.gameRunning = true;
+            minerState.totalCurrency = 0;
+            minerState.cameraY = 0;
+
+            // Generate blocks
+            const cols = 8, rows = 20;
+            const blockSize = 32, padding = 4;
+            const totalWidth = cols * (blockSize + padding);
+            const startX = (gameCanvas.width - totalWidth) / 2 + padding / 2;
+            const startY = 60;
+            const borderX1 = startX - blockSize - padding;
+            const borderX2 = startX + totalWidth;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const type = getRandomBlockType();
+                    minerState.blocks.push({
+                        x: startX + c * (blockSize + padding),
+                        y: startY + r * (blockSize + padding),
+                        width: blockSize, height: blockSize,
+                        type, ...BLOCKS[type],
+                        currentHp: BLOCKS[type].hp,
+                        maxHp: BLOCKS[type].hp,
+                        hit: false, hitTimer: 0, row: r, col: c
+                    });
+                }
+            }
+
+            for (let r = 0; r < rows; r++) {
+                minerState.blocks.push({
+                    x: borderX1, y: startY + r * (blockSize + padding),
+                    width: blockSize, height: blockSize,
+                    type: 'netherite', name: 'Незерит',
+                    hp: 999, currentHp: 9999, maxHp: 999,
+                    reward: 0, color: '#1a237e', dmgToPickaxe: 0,
+                    hit: false, hitTimer: 0, row: r, col: -1, isWall: true
+                });
+                minerState.blocks.push({
+                    x: borderX2, y: startY + r * (blockSize + padding),
+                    width: blockSize, height: blockSize,
+                    type: 'netherite', name: 'Незерит',
+                    hp: 9, currentHp: 9, maxHp: 9999,
+                    reward: 0, color: '#1a237e', dmgToPickaxe: 0,
+                    hit: false, hitTimer: 0, row: r, col: cols, isWall: true
+                });
+            }
+
+            updateMinerUI();
+            if (minerGameLoopId) cancelAnimationFrame(minerGameLoopId);
+            minerGameLoop();
+        }
+
+        function getRandomBlockType() {
+            const total = Object.values(BLOCKS).reduce((s,b) => s + b.rarity, 0);
+            let rand = Math.random() * total;
+            for (const [type, block] of Object.entries(BLOCKS)) {
+                rand -= block.rarity;
+                if (rand <= 0) return type;
+            }
+            return 'dirt';
+        }
+
+        function minerGameLoop() {
+            if (!minerState.gameRunning) return;
+            updateMinerGame();
+            renderMinerGame();
+            minerGameLoopId = requestAnimationFrame(minerGameLoop);
+        }
+
+        function updateMinerGame() {
+            const px = minerState.pickaxe;
+            px.vy += minerState.gravity;
+            px.y += px.vy;
+            px.x += px.vx;
+            px.vx *= 0.98;
+
+            // Wall collision
+            const leftWall = minerState.blocks.find(b => b.isWall && b.col === -1 && Math.abs(b.y - px.y) < 36);
+            const rightWall = minerState.blocks.find(b => b.isWall && b.col === 8 && Math.abs(b.y - px.y) < 36);
+
+            if (leftWall && px.x - px.width/2 < leftWall.x + leftWall.width) {
+                px.x = leftWall.x + leftWall.width + px.width/2;
+                px.vx = Math.abs(px.vx) + minerState.sideBounce;
+                spawnMinerParticles(px.x, px.y, '#1a237e', 5);
+            }
+            if (rightWall && px.x + px.width/2 > rightWall.x) {
+                px.x = rightWall.x - px.width/2;
+                px.vx = -Math.abs(px.vx) - minerState.sideBounce;
+                spawnMinerParticles(px.x, px.y, '#1a237e', 5);
+            }
+
+            if (px.x < px.width/2) { px.x = px.width/2; px.vx = Math.abs(px.vx); }
+
+            // Block collision
+            let hitBlock = null;
+            for (const block of minerState.blocks) {
+                if (block.currentHp <= 0) continue;
+                if (rectCollision(px.x - px.width/2, px.y - px.height/2, px.width, px.height, block.x, block.y, block.width, block.height)) {
+                    hitBlock = block;
+                    break;
+                }
+            }
+
+            if (hitBlock) handleMinerBlockHit(hitBlock);
+
+            px.rotation += px.vx * 0.05;
+
+            // Particles
+            minerState.particles = minerState.particles.filter(p => {
+                p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= 0.02;
+                return p.life > 0;
+            });
+
+            minerState.explosions = minerState.explosions.filter(e => {
+                e.timer -= 0.03;
+                return e.timer > 0;
+            });
+
+            minerState.blocks.forEach(b => { if (b.hitTimer > 0) b.hitTimer -= 0.1; });
+
+            // Camera
+            minerState.targetCameraY = px.y - document.getElementById('miner-canvas').height / 3;
+            minerState.cameraY += (minerState.targetCameraY - minerState.cameraY) * 0.08;
+            if (minerState.cameraY < 0) minerState.cameraY = 0;
+
+            if (px.y - minerState.cameraY > document.getElementById('miner-canvas').height + 10) {
+                px.y = minerState.cameraY + 30;
+                px.vy = 0; px.vx = 0;
+            }
+
+            if (px.hp <= 0) minerGameOver();
+
+            updateMinerUI();
+        }
+
+        function rectCollision(x1,y1,w1,h1,x2,y2,w2,h2) {
+            return x1 < x2+w2 && x1+w1 > x2 && y1 < y2+h2 && y1+h1 > y2;
+        }
+
+        function handleMinerBlockHit(block) {
+            const px = minerState.pickaxe;
+            const dmg = 5 + px.level * 3;
+            block.currentHp -= dmg;
+            block.hit = true;
+            block.hitTimer = 1;
+
+            px.hp -= block.dmgToPickaxe;
+
+            spawnMinerParticles(block.x + block.width/2, block.y + block.height/2, block.color, 8);
+
+            if (block.isWall) {
+                if (px.x < block.x + block.width/2) {
+                    px.x = block.x + block.width + px.width/2;
+                    px.vx = -Math.abs(px.vx) - minerState.sideBounce;
+                } else {
+                    px.x = block.x - px.width/2;
+                    px.vx = Math.abs(px.vx) + minerState.sideBounce;
+                }
+            } else {
+                px.vy = minerState.bounceForce - Math.random() * 2;
+                px.y = block.y - px.height/2 - 1;
+                px.vx += (Math.random() - 0.5) * 8;
+            }
+
+            if (block.currentHp <= 0) {
+                if (block.type === 'tnt') {
+                    triggerMinerExplosion(block);
+                } else {
+                    if (block.reward > 0) {
+                        minerState.totalCurrency += block.reward;
+                        spawnMinerFloatingText(block.x + block.width/2, block.y, `+${block.reward}`);
+                    }
+                    spawnMinerParticles(block.x + block.width/2, block.y + block.height/2, block.color, 15);
+                }
+            }
+
+            document.getElementById('minerPage').classList.add('screen-shake');
+            setTimeout(() => document.getElementById('minerPage').classList.remove('screen-shake'), 300);
+        }
+
+        function triggerMinerExplosion(tntBlock) {
+            const rangeX = 3, rangeY = 2;
+            const blocksToDestroy = minerState.blocks.filter(b => {
+                if (b.isWall || b.currentHp <= 0) return false;
+                return Math.abs(b.col - tntBlock.col) <= rangeX && Math.abs(b.row - tntBlock.row) <= rangeY;
+            });
+
+            minerState.explosions.push({
+                x: tntBlock.x + tntBlock.width/2,
+                y: tntBlock.y + tntBlock.height/2,
+                timer: 1, radius: 80
+            });
+
+            const flash = document.createElement('div');
+            flash.className = 'explosion-flash';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 300);
+
+            let totalReward = 0;
+            blocksToDestroy.forEach(b => {
+                b.currentHp = 0;
+                if (b.reward > 0) {
+                    totalReward += b.reward;
+                    spawnMinerFloatingText(b.x + b.width/2, b.y, `+${b.reward}`);
+                }
+                spawnMinerParticles(b.x + b.width/2, b.y + b.height/2, b.color, 10);
+            });
+
+            minerState.totalCurrency += totalReward;
+            minerState.pickaxe.hp -= 20;
+
+            document.getElementById('minerPage').classList.add('screen-shake');
+            setTimeout(() => document.getElementById('minerPage').classList.remove('screen-shake'), 500);
+        }
+
+        function spawnMinerParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                minerState.particles.push({
+                    x, y,
+                    vx: (Math.random()-0.5)*8,
+                    vy: (Math.random()-0.5)*8-2,
+                    size: 3+Math.random()*5,
+                    color, life: 1, type: 'pixel'
+                });
+            }
+        }
+
+        function spawnMinerFloatingText(x, y, text) {
+            minerState.particles.push({
+                x, y, vx: 0, vy: -1.5,
+                size: 12, color: '#FFD700',
+                life: 1.5, type: 'text', text: `+${text}💰`
+            });
+        }
+
+        function renderMinerGame() {
+            const ctx = gameCtx;
+            const w = document.getElementById('miner-canvas').width;
+            const h = document.getElementById('miner-canvas').height;
+
+            ctx.fillStyle = '#0d0d1a';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.save();
+            ctx.translate(0, -minerState.cameraY % 36);
+            for (let y = 0; y < h + 36; y += 36) {
+                for (let x = 0; x < w; x += 36) {
+                    const shade = ((Math.floor(x/36)+Math.floor(y/36))%2===0)?'#16162a':'#1a1a30';
+                    ctx.fillStyle = shade;
+                    ctx.fillRect(x, y, 36, 36);
+                }
+            }
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(0, -minerState.cameraY);
+
+            minerState.blocks.forEach(block => {
+                if (block.currentHp <= 0) return;
+                const tex = blockTextures[block.type];
+                if (tex) {
+                    ctx.drawImage(tex, block.x, block.y, block.width, block.height);
+                } else {
+                    ctx.fillStyle = block.color;
+                    ctx.fillRect(block.x, block.y, block.width, block.height);
+                }
+
+                ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(block.x, block.y, block.width, block.height);
+
+                if (block.hitTimer > 0) {
+                    ctx.fillStyle = `rgba(25,255,255,${block.hitTimer*0.5})`;
+                    ctx.fillRect(block.x, block.y, block.width, block.height);
+                }
+
+                if (block.currentHp < block.maxHp && !block.isWall) {
+                    const ratio = block.currentHp / block.maxHp;
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(block.x+2, block.y+block.height-5, block.width-4, 3);
+                    ctx.fillStyle = ratio > 0.5 ? '#4CAF50' : ratio > 0.25 ? '#ff9800' : '#f4336';
+                    ctx.fillRect(block.x+2, block.y+block.height-5, (block.width-4)*ratio, 3);
+                }
+            });
+
+            // Explosions
+            minerState.explosions.forEach(exp => {
+                const alpha = exp.timer;
+                const radius = exp.radius * (1 - exp.timer * 0.3);
+                ctx.beginPath();
+                ctx.arc(exp.x, exp.y, radius, 0, Math.PI*2);
+                ctx.strokeStyle = `rgba(25,20,50,${alpha})`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                const grad = ctx.createRadialGradient(exp.x, exp.y, 0, exp.x, exp.y, radius);
+                grad.addColorStop(0, `rgba(255,25,200,${alpha*0.5})`);
+                grad.addColorStop(0.5, `rgba(255,150,50,${alpha*0.3})`);
+                grad.addColorStop(1, 'rgba(255,50,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fill();
+            });
+
+            // Pickaxe
+            const px = minerState.pickaxe;
+            ctx.save();
+            ctx.translate(px.x, px.y);
+            ctx.rotate(px.rotation);
+            const tex = pickaxeTextures[px.type];
+            if (tex) ctx.drawImage(tex, -px.width/2, -px.height/2, px.width, px.height);
+            ctx.restore();
+
+            // Particles
+            minerState.particles.forEach(p => {
+                if (p.type === 'text') {
+                    ctx.font = `bold ${p.size}px monospace`;
+                    ctx.fillStyle = `rgba(255,215,0,${p.life})`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.text, p.x, p.y);
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life;
+                    ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
+                    ctx.globalAlpha = 1;
+                }
+            });
+
+            ctx.restore();
+        }
+
+        function updateMinerUI() {
+            const px = minerState.pickaxe;
+            if (!px) return;
+            const ratio = Math.max(0, px.hp / px.maxHp);
+            const hpBar = document.getElementById('hp-bar');
+            hpBar.style.width = (ratio * 100) + '%';
+            hpBar.className = 'miner-hp-bar' + (ratio < 0.25 ? ' low' : ratio < 0.5 ? ' medium' : '');
+            document.getElementById('hp-text').textContent = Math.max(0, Math.floor(px.hp));
+            document.getElementById('currency-display').textContent = minerState.totalCurrency;
+            document.getElementById('total-currency').textContent = minerState.totalCurrency;
+            document.getElementById('pickaxe-level').textContent = px.name;
+            const mined = minerState.blocks.filter(b => b.currentHp <= 0 && !b.isWall).length;
+            document.getElementById('blocks-mined').textContent = mined;
+        }
+
+        function minerGameOver() {
+            minerState.gameRunning = false;
+            if (minerGameLoopId) cancelAnimationFrame(minerGameLoopId);
+
+            showModal('ИГРА ОКОНЧЕНА', null, `Кирка сломалась!\nРазрушено блоков: ${minerState.blocks.filter(b=>b.currentHp<=0&&!b.isWall).length}\nЗаработано: ${minerState.totalCurrency}`, () => {
+                hideModal();
+                // Return to wheel
+                minerState.wheelScreenEl.classList.remove('hidden');
+                minerState.gameScreenEl.classList.add('hidden');
+                minerState.gameScreenEl.style.display = 'none';
+                minerState.wheelScreenEl.style.display = 'flex';
+            });
+        }
+
+        // ===== MODALS =====
+        window.showModal = function(title, pickaxeType, text, callback) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-text').textContent = text;
+            const mc = document.getElementById('modal-canvas');
+            const mctx = mc.getContext('2d');
+            mctx.clearRect(0,0,48,48);
+            if(pickaxeType && pickaxeTextures[pickaxeType]) {
+                mctx.drawImage(pickaxeTextures[pickaxeType], 8, 8, 32, 32);
+            }
+            document.getElementById('result-modal').classList.add('active');
+            document.getElementById('modal-btn').onclick = () => {
+                document.getElementById('result-modal').classList.remove('active');
+                if(callback) callback();
+            };
+        };
+
+        window.hideModal = function() {
+            document.getElementById('result-modal').classList.remove('active');
+        };
+
+        window.selectPickaxe = function(type) {
+            minerState.selectedPickaxe = type;
+            document.querySelectorAll('.pickaxe-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.pickaxe === type);
+            });
+        };
+
+        window.startGameWithPickaxe = function() {
+            document.getElementById('pickaxe-modal').classList.remove('active');
+            minerState.wheelScreenEl.classList.add('hidden');
+            minerState.gameScreenEl.classList.remove('hidden');
+            minerState.gameScreenEl.style.display = 'flex';
+            initMinerGameScreen();
+        };
+
+        // Spin button
+        document.getElementById('spin-btn').addEventListener('click', spinWheel);
+
+        // Click on game canvas to boost pickaxe
+        document.getElementById('miner-canvas').addEventListener('click', function(e) {
+            if (!minerState.gameRunning || !minerState.pickaxe) return;
+            const rect = this.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top + minerState.cameraY;
+            const dx = clickX - minerState.pickaxe.x;
+            const dy = clickY - minerState.pickaxe.y;
+            const dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist > 0) {
+                minerState.pickaxe.vx += (dx/dist)*3;
+                minerState.pickaxe.vy += (dy/dist)*3;
+            }
+            spawnMinerParticles(clickX, clickY + minerState.cameraY, '#FFD700', 5);
+        });
+
+        // Touch support
+        document.getElementById('miner-canvas').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!minerState.gameRunning || !minerState.pickaxe) return;
+            const touch = e.touches[0];
+            const rect = this.getBoundingClientRect();
+            const clickX = touch.clientX - rect.left;
+            const clickY = touch.clientY - rect.top + minerState.cameraY;
+            const dx = clickX - minerState.pickaxe.x;
+            const dy = clickY - minerState.pickaxe.y;
+            const dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist > 0) {
+                minerState.pickaxe.vx += (dx/dist)*3;
+                minerState.pickaxe.vy += (dy/dist)*3;
+            }
+            spawnMinerParticles(clickX, clickY + minerState.cameraY, '#FFD700', 5);
+        }, { passive: false });
+
+        // Initial draw
+        drawWheel();
+        updateAttemptsUI();
+    }
+})();
+</script>
+// Авто-открытие вкладки при ?game=miner
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('game') === 'miner') {
+    setTimeout(() => {
+        const minerNav = document.getElementById('navMiner');
+        if (minerNav) minerNav.onclick();
+    }, 300);
+}
+
+</body>
 </html>
