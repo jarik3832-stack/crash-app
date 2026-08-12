@@ -1,12 +1,12 @@
 {
-  "name": "crash-app",
-  "version": "0.1.0",
-  "private": true,
-  "engines": {
-    "node": ">=22"
-  },
+  "name": "crash-bot",
+  "version": "1.0.0",
+  "description": "Telegram Mini App Games",
+  "main": "bot.js",
   "scripts": {
-    "build": "npm --prefix server install && npm --prefix client install && npm --prefix client run build",
-    "start": "node server/src/index.js"
-  }
-}
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "express": "^4.18.2"
+ }
